@@ -16,10 +16,12 @@ vector<string> primitiveConcepts;
 vector<string> primitiveRoles;
 vector<string> allObjects;
 vector<Instance> instances;
+
 int get_obj_pos(string object) {
-	int pos = std::find(allObjects.begin(), allObjects.end(), object) - allObjects.begin();
+	int pos = std::find(allObjects.begin(), allObjects.end(), object)
+			- allObjects.begin();
 	if (pos >= allObjects.size()) {
-		cout << "ERR" << endl;
+		cout << "ERR " << object << endl;
 		return -1;
 	} else
 		return pos;
@@ -50,21 +52,21 @@ void get_input() {
 	fin.open("plans.txt");
 	if (fin.is_open()) {
 		while (!fin.eof() && getline(fin, line)) {
-			//cout << line << endl;
 			Instance inst;
 			istringstream iss(line);
 			getline(iss, field, '\t');
 			inst.SetNumPlan(atoi(field.c_str()));
 			getline(iss, field, '\t');
 			inst.SetNumActions(atoi(field.c_str()));
-			for (int i = 0; i < inst.GetNumActions(); ++i) {
+
+			for (int i = 0; i < inst.GetNumActions()+1; ++i) {
 				State s;
 				vector<int> conceptInterpretation;
 				vector<pair<int, int> > roleInterpretation;
 
 				//for concepts
 				for (unsigned j = 0; j < primitiveConcepts.size()-1; ++j) {
-					if ((!fin.eof() && getline(fin, line))) {
+					if (!fin.eof() && getline(fin, line)) {
 						istringstream iss(line);
 						getline(iss, field, '\t');
 						string cname = field;
@@ -72,16 +74,15 @@ void get_input() {
 						istringstream interpretation(field);
 						string object;
 						while (getline(interpretation, object, ' ')) {
-							cout << object << " ";
-							unsigned pos = get_obj_pos(object);
-							if (pos > 0)
+							int pos = get_obj_pos(object);
+							if (pos > -1)
 								conceptInterpretation.push_back(pos);
 						}
-						s.AddConceptInterpretation(cname, conceptInterpretation);
+						s.AddConceptInterpretation(cname,
+								conceptInterpretation);
 						conceptInterpretation.clear();
 					}
 				}
-				cout<<endl;
 				//for roles
 				for (unsigned j = 0; j < primitiveRoles.size(); ++j) {
 					if ((!fin.eof() && getline(fin, line))) {
@@ -94,33 +95,38 @@ void get_input() {
 						while (getline(interpretation, pair, ' ')) {
 							istringstream pairInterpretation(pair);
 							string object;
-							i = 0;
+							int pair_num = 0;
 							std::pair<int, int> p;
 							while (getline(pairInterpretation, object, ',')) {
-								cout << object << " ";
-								unsigned pos = get_obj_pos(object);
-								if (pos > 0) {
-									if (i == 0) {
+								int pos = get_obj_pos(object);
+								if (pos > -1) {
+									if (pair_num == 0) {
 										p.first = pos;
-										++i;
+										++pair_num;
 									} else {
 										p.second = pos;
-										i = 0;
+										pair_num = 0;
 									}
 								}
 							}
 							roleInterpretation.push_back(p);
 						}
+						//cout << endl;
 						s.AddRoleInterpretation(rname, roleInterpretation);
 						roleInterpretation.clear();
 					}
 				}
-				if ((!fin.eof() && getline(fin, line))) {
+
+				if ((!fin.eof() && i < inst.GetNumActions()
+						&& getline(fin, line))) {
 					istringstream iss(line);
-					getline(iss, field, '\t');
-					s.SetAction(field);
+					//getline(iss, field, '\t');
+					s.SetAction(line);
+					s.SetNumState(i);
+					inst.AddState(s);
+				} else if (i == inst.GetNumActions()) {
+					inst.SetGoal(s);
 				}
-				inst.AddState(s);
 			}
 			instances.push_back(inst);
 		}
@@ -129,6 +135,15 @@ void get_input() {
 }
 
 void input_check() {
+	cout << "Number of instances: " << instances.size() << endl;
+	for (unsigned i = 0; i < instances.size(); ++i) {
+		cout << instances[i].GetNumPlan() << " " << instances[i].GetNumActions()
+				<< endl;
+		for (unsigned j = 0; j < instances[i].GetStates().size(); ++j) {
+			instances[i].GetStates()[j].Print(allObjects);
+		}
+		instances[i].GetGoal().Print(allObjects);
+	}
 	cout << endl;
 	for (unsigned i = 0; i < primitiveConcepts.size(); i++)
 		cout << primitiveConcepts[i] << " ";

@@ -14,17 +14,39 @@ class Instance {
 	int numPlan;
 	int numActions;
 	std::vector<State> states;
+	State goal;
 public:
 	Instance();
 	virtual ~Instance();
-	inline void AddState(State s){
+	inline void AddState(State s) {
 		states.push_back(s);
 	}
-	inline void SetNumPlan(int num){ numPlan = num;}
-	inline int SetNumPlan(){ return numPlan;}
-	inline void SetNumActions(int num){ numActions = num;}
-	inline int GetNumActions(){ return numActions;}
-	State& operator[] (const int nIndex);
+	inline void SetGoal(State s) {
+		s.SetGoal();
+		goal = s;
+	}
+	inline std::vector<State> GetStates() {
+		return states;
+	}
+	inline State GetGoal() {
+		return goal;
+	}
+	inline void SetNumPlan(int num) {
+		numPlan = num;
+	}
+	inline int SetNumPlan() {
+		return numPlan;
+	}
+	inline void SetNumActions(int num) {
+		numActions = num;
+	}
+	inline int GetNumPlan() {
+		return numPlan;
+	}
+	inline int GetNumActions() {
+		return numActions;
+	}
+	State& operator[](const int nIndex);
 };
 
 #endif /* PLAN_HXX_ */

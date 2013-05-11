@@ -12,19 +12,25 @@
 #include <string>
 #include <iostream>
 class State {
-	int type;
+	int type, number;
 	std::map<std::string, std::vector<int> > conceptInterpretation;
 	std::map<std::string, std::vector<std::pair<int, int> > > roleInterpretation;
 	std::string action;
 public:
 	State();
 	virtual ~State();
-	inline void AddConceptInterpretation(std::string concept, std::vector<int> interpretation) {
+	inline void AddConceptInterpretation(std::string concept,
+			std::vector<int> interpretation) {
 		conceptInterpretation[concept] = interpretation;
 	}
 
-	inline void AddRoleInterpretation(std::string role, std::vector<std::pair<int, int> > interpretation) {
+	inline void AddRoleInterpretation(std::string role,
+			std::vector<std::pair<int, int> > interpretation) {
 		roleInterpretation[role] = interpretation;
+	}
+
+	inline void SetNumState(int stateNum) {
+		number = stateNum;
 	}
 
 	inline void SetGoal() {
@@ -39,26 +45,7 @@ public:
 		action = a;
 	}
 
-	void Print(std::vector<int> allObjects) {
-		std::map<std::string, std::vector<int> >::iterator it;
-		std::map<std::string, std::vector<std::pair<int, int> > >::iterator itr;
-
-		for (it = conceptInterpretation.begin(); it != conceptInterpretation.end(); ++it) {
-			std::cout << it->first;
-			std::cout << ": ";
-			for (unsigned i = 0; i < it->second.size(); ++i)
-				std::cout << it->second[i] << " ";
-			std::cout << std::endl;
-		}
-
-		for (itr = roleInterpretation.begin(); itr != roleInterpretation.end(); ++itr) {
-			std::cout << itr->first;
-			std::cout << ": ";
-			for (unsigned i = 0; i < itr->second.size(); ++i)
-				std::cout << itr->second[i].first << "," << itr->second[i].second << " ";
-			std::cout << std::endl;
-		}
-	}
+	void Print(std::vector<std::string> allObjects);
 };
 
 #endif /* STATE_HXX_ */
