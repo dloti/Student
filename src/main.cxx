@@ -9,13 +9,61 @@
 #include <algorithm>
 #include <stdlib.h>
 #include "Instance.hxx"
+#include "Expression.hxx"
+#include "ConceptNode.hxx"
+#include "RoleNode.hxx"
+#include "BinaryOperator.hxx"
+#include "Join.hxx"
+#include "Not.hxx"
+#include "InverseRole.hxx"
+#include "TransitiveClosure.hxx"
+#include "Equality.hxx"
+#include "ValueRestriction.hxx"
+#include "Rule.hxx"
 
 using namespace std;
+using namespace expression;
 
+vector<Expression*> rootConcepts;
+vector<Expression*> rootRoles;
 vector<string> primitiveConcepts;
 vector<string> primitiveRoles;
 vector<string> allObjects;
 vector<Instance> instances;
+vector<vector<int> > subsets;
+vector<Rule> ruleSet;
+
+void initialize_concepts() {
+	for (unsigned i = 0; i < primitiveConcepts.size(); ++i) {
+		ConceptNode* c = new ConceptNode(primitiveConcepts[i]);
+		rootConcepts.push_back(c);
+	}
+
+	for (unsigned i = 0; i < primitiveRoles.size(); ++i) {
+		RoleNode* r = new RoleNode(primitiveConcepts[i]);
+		rootRoles.push_back(r);
+	}
+}
+
+void combine_roles() {
+	vector<Expression*>::iterator roleIt;
+	vector<Expression*> candidates;
+	UnaryOperator* uo;
+	for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
+		uo = new InverseRole(*roleIt);
+		candidates.push_back(uo);
+		uo = new TransitiveClosure(*roleIt);
+		candidates.push_back(uo);
+		//TODO Composition
+	}
+
+	for(unsigned i=0;i<candidates.size();++i)
+		rootRoles.push_back(candidates[i]);
+}
+
+void combine_concepts(){
+//TODO
+}
 
 int get_obj_pos(string object) {
 	int pos = std::find(allObjects.begin(), allObjects.end(), object)
@@ -59,13 +107,13 @@ void get_input() {
 			getline(iss, field, '\t');
 			inst.SetNumActions(atoi(field.c_str()));
 
-			for (int i = 0; i < inst.GetNumActions()+1; ++i) {
+			for (int i = 0; i < inst.GetNumActions() + 1; ++i) {
 				State s;
 				vector<int> conceptInterpretation;
 				vector<pair<int, int> > roleInterpretation;
 
 				//for concepts
-				for (unsigned j = 0; j < primitiveConcepts.size()-1; ++j) {
+				for (unsigned j = 0; j < primitiveConcepts.size() - 1; ++j) {
 					if (!fin.eof() && getline(fin, line)) {
 						istringstream iss(line);
 						getline(iss, field, '\t');
@@ -134,7 +182,7 @@ void get_input() {
 	fin.close();
 }
 
-void input_check() {
+void input_printout() {
 	cout << "Number of instances: " << instances.size() << endl;
 	for (unsigned i = 0; i < instances.size(); ++i) {
 		cout << instances[i].GetNumPlan() << " " << instances[i].GetNumActions()
@@ -156,8 +204,31 @@ void input_check() {
 	cout << endl;
 }
 
+void cleanup() {
+
+	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
+		delete rootConcepts[i];
+	}
+
+	for (unsigned i = 0; i < rootRoles.size(); ++i) {
+		delete rootRoles[i];
+	}
+
+	rootConcepts.clear();
+	rootRoles.clear();
+
+}
+
 int main(int argc, char** argv) {
 	get_input();
-	input_check();
+	input_printout();
+	initialize_concepts();
+	combine_roles();
+
+	for(int i=0;i<rootRoles.size();++i){
+		rootRoles[i]->infix(cout);
+		cout<<endl;
+	}
+	cleanup();
 	return 0;
 }
