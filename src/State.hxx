@@ -19,14 +19,20 @@ class State {
 public:
 	State();
 	virtual ~State();
-	inline void AddConceptInterpretation(std::string concept,
-			std::vector<int> interpretation) {
+	inline void AddConceptInterpretation(std::string concept, std::vector<int> interpretation) {
 		conceptInterpretation[concept] = interpretation;
 	}
 
-	inline void AddRoleInterpretation(std::string role,
-			std::vector<std::pair<int, int> > interpretation) {
+	inline void AddRoleInterpretation(std::string role, std::vector<std::pair<int, int> > interpretation) {
 		roleInterpretation[role] = interpretation;
+	}
+
+	inline std::vector<int> GetConceptInterpretation(std::string name) {
+		return conceptInterpretation[name];
+	}
+
+	inline std::vector<std::pair<int, int> > GetRoleInterpretation(std::string name) {
+		return roleInterpretation[name];
 	}
 
 	inline void SetNumState(int stateNum) {

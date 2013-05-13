@@ -9,6 +9,7 @@
 namespace expression {
 TransitiveClosure::TransitiveClosure(Expression* child) :
 		UnaryOperator(child, '*') {
+	this->UpdateDenotations();
 }
 
 std::vector<std::pair<int, int> >* TransitiveClosure::GetRoleInterpretation() {
@@ -16,27 +17,78 @@ std::vector<std::pair<int, int> >* TransitiveClosure::GetRoleInterpretation() {
 	return &(this->roleInterpretation);
 }
 
+void TransitiveClosure::UpdateDenotations() {
+	this->denotationsRole.clear();
+	std::vector<std::vector<std::pair<int, int> > > cDenot = this->child->GetDenotationRoleVec();
+
+	for (int i = 0; i < cDenot.size(); ++i) {
+		std::vector<std::pair<int, int> > childInterpretation = cDenot[i];
+
+		std::vector<std::pair<int, int> > tempInterpretation;
+		std::vector<int> elements;
+		for (int j = 0; j < childInterpretation.size(); ++j) {
+			if (std::find(elements.begin(), elements.end(), childInterpretation[j].first) == elements.end()) {
+				elements.push_back(childInterpretation[j].first);
+			}
+			if (std::find(elements.begin(), elements.end(), childInterpretation[j].second) == elements.end()) {
+				elements.push_back(childInterpretation[j].second);
+			}
+		}
+
+		bool matrix[elements.size()][elements.size()];
+		std::pair<int, int>* p;
+		for (unsigned k = 0; k < elements.size(); ++k) {
+			for (unsigned t = 0; t < elements.size(); ++t) {
+				p = new std::pair<int, int>(elements[k], elements[t]);
+				if (std::find(childInterpretation.begin(), childInterpretation.end(), *p) != childInterpretation.end())
+					matrix[k][t] = true;
+				else
+					matrix[k][t] = false;
+				delete p;
+			}
+		}
+
+		for (unsigned k = 0; k < elements.size(); ++k) {
+			for (unsigned t = 0; t < elements.size(); ++t) {
+				for (unsigned f = 0; f < elements.size(); ++f) {
+					if ((matrix[t][k] && matrix[k][f]) || matrix[t][f]) {
+						matrix[t][f] = true;
+					}
+				}
+			}
+		}
+
+		for (unsigned k = 0; k < elements.size(); ++k) {
+			for (unsigned t = 0; t < elements.size(); ++t) {
+				if (matrix[k][t]) {
+					p = new std::pair<int, int>(elements[k], elements[t]);
+					tempInterpretation.push_back(*p);
+					delete p;
+				}
+			}
+		}
+
+		this->denotationsRole.push_back(tempInterpretation);
+	}
+}
+
 void TransitiveClosure::UpdateInterpretation() {
 	this->child->UpdateInterpretation();
 	ClearInterpretation();
 
-	std::vector<std::pair<int, int> >* childInterpretation =
-			(this->child)->GetRoleInterpretation();
+	std::vector<std::pair<int, int> >* childInterpretation = (this->child)->GetRoleInterpretation();
 
 	if (childInterpretation == NULL || childInterpretation->size() == 0)
 		return;
 
 	std::vector<int> elements;
-	std::vector<std::pair<int, int> >::iterator first =
-			childInterpretation->begin(), last = childInterpretation->end();
+	std::vector<std::pair<int, int> >::iterator first = childInterpretation->begin(), last = childInterpretation->end();
 
 	for (; first != last; ++first) {
-		if (std::find(elements.begin(), elements.end(), first->first)
-				== elements.end()) {
+		if (std::find(elements.begin(), elements.end(), first->first) == elements.end()) {
 			elements.push_back(first->first);
 		}
-		if (std::find(elements.begin(), elements.end(), first->second)
-				== elements.end()) {
+		if (std::find(elements.begin(), elements.end(), first->second) == elements.end()) {
 			elements.push_back(first->second);
 		}
 	}
@@ -68,7 +120,7 @@ void TransitiveClosure::UpdateInterpretation() {
 		for (unsigned j = 0; j < elements.size(); ++j) {
 			//std::cout<<(matrix[i][j]?"T":"F")<<" ";
 			if (matrix[i][j]) {
-				p = new std::pair<int,int>(elements[i], elements[j]);
+				p = new std::pair<int, int>(elements[i], elements[j]);
 
 				this->roleInterpretation.push_back(*p);
 			}

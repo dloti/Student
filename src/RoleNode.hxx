@@ -19,6 +19,7 @@ public:
 	std::vector<int>* GetInterpretation();
 	std::vector<std::pair<int,int> >* GetRoleInterpretation();
 	void UpdateInterpretation();
+	void UpdateDenotations(std::vector<Instance> instances);
 	void ClearInterpretation();
 	virtual ~RoleNode();
 };

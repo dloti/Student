@@ -13,6 +13,7 @@ class InverseRole : public UnaryOperator{
 public:
 	InverseRole(Expression* child);
 	std::vector<std::pair<int,int> >* GetRoleInterpretation();
+	void UpdateDenotations();
 	void UpdateInterpretation();
 	virtual ~InverseRole();
 };

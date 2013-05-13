@@ -19,6 +19,7 @@ public:
 	void ClearInterpretation();
 	std::vector<int>* GetInterpretation();
 	std::vector<std::pair<int,int> >* GetRoleInterpretation();
+	virtual void UpdateDenotations()=0;
 	virtual ~Operator();
 };
 }

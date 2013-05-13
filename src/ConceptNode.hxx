@@ -20,6 +20,7 @@ public:
 	std::vector<std::pair<int,int> >* GetRoleInterpretation();
 	virtual ~ConceptNode();
 	void UpdateInterpretation();
+	void UpdateDenotations(std::vector<Instance> instances);
 	void ClearInterpretation();
 	std::vector<int>* GetInterpretation();
 	//friend std::ostream& operator<< (std::ostream &out, ConceptNode &cNode);

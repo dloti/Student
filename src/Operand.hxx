@@ -15,6 +15,7 @@ protected:
 	std::string predicate;
 public:
 	Operand();
+	virtual void UpdateDenotations(std::vector<Instance> instances) = 0;
 	void print(std::ostream& s) const {
 		s << predicate;
 		if (goal)

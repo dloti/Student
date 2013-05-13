@@ -13,6 +13,7 @@ class TransitiveClosure : public UnaryOperator {
 public:
 	TransitiveClosure(Expression* child);
 	std::vector<std::pair<int,int> >* GetRoleInterpretation();
+	void UpdateDenotations();
 	void UpdateInterpretation();
 	virtual ~TransitiveClosure();
 };
