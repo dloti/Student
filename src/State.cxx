@@ -30,7 +30,7 @@ void State::Print(std::vector<std::string> allObjects) {
 		std::cout << it->first;
 		std::cout << ": ";
 		for (unsigned i = 0; i < it->second.size(); ++i)
-			std::cout << allObjects[it->second[i]] << " ";
+			std::cout << allObjects[it->second[i]] << "-";
 		std::cout << std::endl;
 	}
 
@@ -40,7 +40,7 @@ void State::Print(std::vector<std::string> allObjects) {
 		std::cout << ": ";
 		for (unsigned i = 0; i < itr->second.size(); ++i)
 			std::cout << allObjects[itr->second[i].first] << ","
-					<< allObjects[itr->second[i].second] << " ";
+					<< allObjects[itr->second[i].second] << "-";
 		std::cout << std::endl;
 	}
 	if (!(this->IsGoal()))

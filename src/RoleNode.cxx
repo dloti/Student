@@ -14,8 +14,7 @@ RoleNode::RoleNode(std::string predicate) {
 	this->predicate = predicate;
 }
 
-void RoleNode::UpdateDenotations(std::vector<Instance> instances) {
-
+void RoleNode::UpdateDenotations(std::vector<Instance> instances, std::vector<int>* allObjects) {
 	for (unsigned i = 0; i < instances.size(); ++i) {
 		std::vector<State> states = instances[i].GetStates();
 		for (unsigned j = 0; j < states.size(); ++j) {

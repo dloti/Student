@@ -27,6 +27,7 @@ std::vector<int>* ValueRestriction::GetInterpretation() {
 }
 
 void ValueRestriction::UpdateDenotations() {
+	this->nonEmptyDenot = 0;
 	std::vector<std::vector<std::pair<int, int> > > rDenot = this->left->GetDenotationRoleVec();
 	std::vector<std::vector<int> > cDenot = this->right->GetDenotationVec();
 	if (cDenot.size() != rDenot.size()) {
@@ -34,8 +35,8 @@ void ValueRestriction::UpdateDenotations() {
 		return;
 	}
 
+	std::vector<int> tmpInterpretation;
 	for (unsigned i = 0; i < rDenot.size(); ++i) {
-		std::vector<int> tmpInterpretation;
 		std::vector<int> riFirst;
 		std::vector<std::pair<int, int> >::iterator pairIterator;
 		std::vector<int>::iterator it, end;
@@ -48,7 +49,9 @@ void ValueRestriction::UpdateDenotations() {
 		std::vector<int>::iterator last2 = cDenot[i].end();
 		std::set_intersection(it, end, first2, last2, std::back_inserter(tmpInterpretation));
 		if(tmpInterpretation.size()>0) this->nonEmptyDenot++;
+		std::sort(tmpInterpretation.begin(),tmpInterpretation.end());
 		this->denotations.push_back(tmpInterpretation);
+		tmpInterpretation.clear();
 	}
 }
 

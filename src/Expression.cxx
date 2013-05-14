@@ -11,7 +11,6 @@ namespace expression {
 Expression::Expression() {
 	this->level = 0;
 	this->isRole = false;
-	this->nonEmptyDenot = 0;
 }
 
 Expression::~Expression() {

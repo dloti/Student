@@ -10,8 +10,9 @@
 #include "UnaryOperator.hxx"
 namespace expression {
 class Not :public UnaryOperator {
+	std::vector<int>* allObjects;
 public:
-	Not(Expression* child);
+	Not(Expression* child, std::vector<int>* allObjects);
 	std::vector<int>* GetInterpretation();
 	void UpdateDenotations();
 	void UpdateInterpretation();

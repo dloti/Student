@@ -9,7 +9,6 @@
 namespace expression {
 UnaryOperator::UnaryOperator(Expression *child,char op):Operator(op) {
 	this->child = child;
-	this->allObjects = child->GetObjects();
 }
 
 void UnaryOperator::UpdateInterpretation(){

@@ -24,15 +24,17 @@ ConceptNode::~ConceptNode() {
 void ConceptNode::UpdateInterpretation() {
 }
 
-void ConceptNode::UpdateDenotations(std::vector<Instance> instances) {
+void ConceptNode::UpdateDenotations(std::vector<Instance> instances, std::vector<int>* allObjects) {
+	this->nonEmptyDenot = 0;
 	if (this->predicate.compare("OBJECT") == 0) {
 		std::vector<int> vec;
 		for (unsigned k = 0; k < allObjects->size(); ++k)
-			vec.push_back(k);
+			vec.push_back((*allObjects)[k]);
 
 		for (unsigned i = 0; i < instances.size(); ++i) {
 			std::vector<State> states = instances[i].GetStates();
 			for (unsigned j = 0; j < states.size(); ++j) {
+				this->nonEmptyDenot++;
 				this->denotations.push_back(vec);
 			}
 		}
@@ -42,10 +44,15 @@ void ConceptNode::UpdateDenotations(std::vector<Instance> instances) {
 	for (unsigned i = 0; i < instances.size(); ++i) {
 		std::vector<State> states = instances[i].GetStates();
 		for (unsigned j = 0; j < states.size(); ++j) {
-			if (this->goal)
-				this->denotations.push_back(instances[i].GetGoal().GetConceptInterpretation(this->predicate));
-			else
-				this->denotations.push_back(states[j].GetConceptInterpretation(this->predicate));
+			if (this->goal) {
+				std::vector<int> vec = instances[i].GetGoal().GetConceptInterpretation(this->predicate);
+				if(vec.size()>0) this->nonEmptyDenot++;
+				this->denotations.push_back(vec);
+			} else {
+				std::vector<int> vec = states[j].GetConceptInterpretation(this->predicate);
+				if(vec.size()>0) this->nonEmptyDenot++;
+				this->denotations.push_back(vec);
+			}
 		}
 	}
 }

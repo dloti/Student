@@ -21,10 +21,6 @@ class Expression {
 protected:
 	int level;
 	bool isRole;
-	std::vector<std::string>* allObjects;
-	int nonEmptyDenot;
-	std::vector<std::vector<int> > denotations;
-	std::vector<std::vector<std::pair<int, int> > > denotationsRole;
 public:
 	Expression();
 	virtual void print(std::ostream& s) const = 0;
@@ -34,6 +30,9 @@ public:
 	virtual std::vector<int>* GetInterpretation() = 0;
 	virtual std::vector<std::pair<int, int> >* GetRoleInterpretation() = 0;
 	virtual std::vector<Expression*> GetChildren() = 0;
+	virtual int GetNonEmptyDenotationNum()=0;
+	virtual std::vector<std::vector<int> > GetDenotationVec()= 0;
+	virtual std::vector<std::vector<std::pair<int, int> > > GetDenotationRoleVec()= 0;
 
 	inline bool IsRole() {
 		return isRole;
@@ -48,25 +47,8 @@ public:
 		this->level = level;
 	}
 
-	inline bool GetNonEmptyDenotationNum() {
-		return this->nonEmptyDenot;
-	}
 
-	inline void SetObjects(std::vector<std::string>* objects) {
-		this->allObjects = objects;
-	}
 
-	inline std::vector<std::string>* GetObjects() {
-		return this->allObjects;
-	}
-
-	inline std::vector<std::vector<int> > GetDenotationVec() {
-		return denotations;
-	}
-
-	inline std::vector<std::vector<std::pair<int, int> > > GetDenotationRoleVec() {
-		return denotationsRole;
-	}
 	virtual ~Expression();
 };
 }

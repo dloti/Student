@@ -19,6 +19,7 @@ std::vector<std::pair<int, int> >* InverseRole::GetRoleInterpretation() {
 }
 
 void InverseRole::UpdateDenotations() {
+	this->nonEmptyDenot = 0;
 	this->denotationsRole.clear();
 	std::vector<std::vector<std::pair<int, int> > > cDenot = this->child->GetDenotationRoleVec();
 	for (unsigned i = 0; i < cDenot.size(); ++i) {
