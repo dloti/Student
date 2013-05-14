@@ -22,6 +22,7 @@ protected:
 	int level;
 	bool isRole;
 	std::vector<std::string>* allObjects;
+	int nonEmptyDenot;
 	std::vector<std::vector<int> > denotations;
 	std::vector<std::vector<std::pair<int, int> > > denotationsRole;
 public:
@@ -40,11 +41,15 @@ public:
 	inline void SetRole(bool isRole) {
 		this->isRole = isRole;
 	}
-	inline bool SetLevel() {
+	inline bool GetLevel() {
 		return level;
 	}
-	inline void GetLevel(int level) {
+	inline void SetLevel(int level) {
 		this->level = level;
+	}
+
+	inline bool GetNonEmptyDenotationNum() {
+		return this->nonEmptyDenot;
 	}
 
 	inline void SetObjects(std::vector<std::string>* objects) {

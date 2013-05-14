@@ -14,6 +14,7 @@ public:
 	Equality(Expression* left, Expression* right);
 	void SetLeft(Expression* left);
 	void SetRight(Expression* right);
+	void UpdateDenotations();
 	std::vector<int>* GetInterpretation();
 	void UpdateInterpretation();
 	virtual ~Equality();

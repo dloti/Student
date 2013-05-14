@@ -22,14 +22,15 @@ void InverseRole::UpdateDenotations() {
 	this->denotationsRole.clear();
 	std::vector<std::vector<std::pair<int, int> > > cDenot = this->child->GetDenotationRoleVec();
 	for (unsigned i = 0; i < cDenot.size(); ++i) {
-		std::vector<std::pair<int, int> > tempInterpretation;
+		std::vector<std::pair<int, int> > tmpInterpretation;
 		for (unsigned j; j < cDenot[i].size(); ++j) {
 			std::pair<int, int>* p = new std::pair<int, int>(cDenot[i][j].second, cDenot[i][j].first);
 			if (std::find(cDenot[i].begin(), cDenot[i].end(), *p) != cDenot[i].end())
-				tempInterpretation.push_back(*p);
+				tmpInterpretation.push_back(*p);
 			delete p;
 		}
-		this->denotationsRole.push_back(tempInterpretation);
+		if(tmpInterpretation.size()>0) this->nonEmptyDenot++;
+		this->denotationsRole.push_back(tmpInterpretation);
 	}
 }
 

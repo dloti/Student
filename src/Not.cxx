@@ -17,15 +17,22 @@ std::vector<int>* Not::GetInterpretation() {
 	return &(this->interpretation);
 }
 void Not::UpdateDenotations() {
+	if (typeid(*child) == typeid(Not))
+		return;
+	std::cout<<" NOT ";
 	std::vector<std::vector<int> > cDenot = this->child->GetDenotationVec();
+	std::vector<int> tmpInterpretation;
+	tmpInterpretation.reserve(cDenot[0].size());
 	for (unsigned i = 0; i < cDenot.size(); ++i) {
-		std::vector<int> tmpInterpretation;
-		for (unsigned j = 0;j < allObjects->size(); ++j) {
-			if (std::find(cDenot[i].begin(), cDenot[i].end(), j) != cDenot[i].end())
-				continue;
-			tmpInterpretation.push_back(j);
+		for (unsigned j = 0; j < allObjects->size(); ++j) {
+			if (std::find(cDenot[i].begin(), cDenot[i].end(), j)
+					== cDenot[i].end())
+				tmpInterpretation.push_back(j);
 		}
+		if (tmpInterpretation.size() > 0)
+			this->nonEmptyDenot++;
 		this->denotations.push_back(tmpInterpretation);
+		tmpInterpretation.clear();
 	}
 }
 
@@ -37,7 +44,8 @@ void Not::UpdateInterpretation() {
 		return;
 
 	for (unsigned i = 0; i < allObjects->size(); i++) {
-		if (std::find(childInterpretation->begin(), childInterpretation->end(), i) != childInterpretation->end())
+		if (std::find(childInterpretation->begin(), childInterpretation->end(),
+				i) != childInterpretation->end())
 			continue;
 		interpretation.push_back(i);
 	}

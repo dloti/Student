@@ -24,7 +24,7 @@ void TransitiveClosure::UpdateDenotations() {
 	for (int i = 0; i < cDenot.size(); ++i) {
 		std::vector<std::pair<int, int> > childInterpretation = cDenot[i];
 
-		std::vector<std::pair<int, int> > tempInterpretation;
+		std::vector<std::pair<int, int> > tmpInterpretation;
 		std::vector<int> elements;
 		for (int j = 0; j < childInterpretation.size(); ++j) {
 			if (std::find(elements.begin(), elements.end(), childInterpretation[j].first) == elements.end()) {
@@ -62,13 +62,14 @@ void TransitiveClosure::UpdateDenotations() {
 			for (unsigned t = 0; t < elements.size(); ++t) {
 				if (matrix[k][t]) {
 					p = new std::pair<int, int>(elements[k], elements[t]);
-					tempInterpretation.push_back(*p);
+					tmpInterpretation.push_back(*p);
 					delete p;
 				}
 			}
 		}
 
-		this->denotationsRole.push_back(tempInterpretation);
+		if(tmpInterpretation.size()>0) this->nonEmptyDenot++;
+		this->denotationsRole.push_back(tmpInterpretation);
 	}
 }
 

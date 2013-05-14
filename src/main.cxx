@@ -72,31 +72,76 @@ void combine_roles(bool first = true) {
 		rootRoles.push_back(candidates[i]);
 }
 
+void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
+	if (exp->GetNonEmptyDenotationNum() == 0) {
+		delete exp;
+		return;
+	}
+	for (unsigned i = 0; i < rootConcepts.size(); ++i){
+		if (exp->EqualDenotationVec(rootConcepts[i])) {
+			delete exp;
+			return;
+		}
+	}
+	for (unsigned i = 0; i < candidates->size(); ++i){
+		if (exp->EqualDenotationVec((*candidates)[i])) {
+			delete exp;
+			return;
+		}
+	}
+	candidates->push_back(exp);
+	cout<<" INS ";
+}
+
 void combine_concepts() {
 	vector<Expression*>::iterator conceptIt, conceptIt1, roleIt, roleIt1;
 	vector<Expression*> candidates;
 	UnaryOperator* uo;
 	BinaryOperator* bo;
 	bool hasCandidates = true;
+	int runCount = 0;
 	while (hasCandidates) {
-		for (conceptIt = rootConcepts.begin(); conceptIt < rootConcepts.end(); ++conceptIt) {
+		cout<<"Concepts: "<<rootConcepts.size();
+		for (conceptIt = rootConcepts.begin(); conceptIt < rootConcepts.end();
+				++conceptIt) {
 			uo = new Not(*conceptIt);
-			candidates.push_back(uo);
-			for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
+			insert_candidate(uo, &candidates);
+			for (roleIt = rootRoles.begin(); roleIt < rootRoles.end();
+					++roleIt) {
 				bo = new ValueRestriction(*roleIt, *conceptIt);
-				candidates.push_back(bo);
+				insert_candidate(bo, &candidates);
+
+				for (roleIt1 = rootRoles.begin(); roleIt1 < rootRoles.end();
+						++roleIt1) {
+					if (roleIt == roleIt1)
+						continue;
+					bo = new Equality(*roleIt, *roleIt1);
+					insert_candidate(bo, &candidates);
+				}
+			}
+			for (conceptIt1 = rootConcepts.begin();
+					conceptIt1 < rootConcepts.end(); ++conceptIt1) {
+				if (conceptIt == conceptIt1)
+					continue;
+				bo = new Join(*conceptIt, *conceptIt1);
+				insert_candidate(bo, &candidates);
 			}
 		}
 
 		for (unsigned i = 0; i < candidates.size(); ++i)
 			rootConcepts.push_back(candidates[i]);
+		if(candidates.size()==0)
+			hasCandidates = false;
 		candidates.clear();
-		hasCandidates = false;
+		++runCount;
+		cout<<"Pass: "<<runCount<<endl;
+		if(runCount==2) break;
 	}
 }
 
 int get_obj_pos(string object) {
-	int pos = std::find(allObjects.begin(), allObjects.end(), object) - allObjects.begin();
+	int pos = std::find(allObjects.begin(), allObjects.end(), object)
+			- allObjects.begin();
 	if (pos >= allObjects.size()) {
 		cout << "ERR " << object << endl;
 		return -1;
@@ -157,7 +202,8 @@ void get_input() {
 							if (pos > -1)
 								conceptInterpretation.push_back(pos);
 						}
-						s.AddConceptInterpretation(cname, conceptInterpretation);
+						s.AddConceptInterpretation(cname,
+								conceptInterpretation);
 						conceptInterpretation.clear();
 					}
 				}
@@ -195,7 +241,8 @@ void get_input() {
 					}
 				}
 
-				if ((!fin.eof() && i < inst.GetNumActions() && getline(fin, line))) {
+				if ((!fin.eof() && i < inst.GetNumActions()
+						&& getline(fin, line))) {
 					istringstream iss(line);
 					//getline(iss, field, '\t');
 					s.SetAction(line);
@@ -250,11 +297,12 @@ void printout() {
 	for (unsigned i = 0; i < rootRoles.size(); ++i) {
 		rootRoles[i]->infix(cout);
 		cout << endl;
-		vector<vector<pair<int, int> > > denotations = rootRoles[i]->GetDenotationRoleVec();
+		vector<vector<pair<int, int> > > denotations =
+				rootRoles[i]->GetDenotationRoleVec();
 		for (unsigned j = 0; j < denotations.size(); ++j) {
 			for (unsigned k = 0; k < denotations[j].size(); ++k) {
-				cout << "(" << allObjects[denotations[j][k].first] << "," << allObjects[denotations[j][k].second]
-						<< ") ";
+				cout << "(" << allObjects[denotations[j][k].first] << ","
+						<< allObjects[denotations[j][k].second] << ") ";
 			}
 			cout << endl;
 		}

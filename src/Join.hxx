@@ -12,6 +12,7 @@ namespace expression {
 class Join : public BinaryOperator {
 public:
 	Join(Expression* left, Expression* right);
+	void UpdateDenotations();
 	std::vector<int>* GetInterpretation();
 	void UpdateInterpretation();
 	virtual ~Join();
