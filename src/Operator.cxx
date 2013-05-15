@@ -32,25 +32,33 @@ std::vector<std::pair<int, int> >* Operator::GetRoleInterpretation() {
 bool Operator::EqualDenotationVec(Expression* exp) {
 
 	if (exp->GetNonEmptyDenotationNum() != this->nonEmptyDenot)
-			return false;
+		return false;
 
-	if(exp->GetNonEmptyDenotationNum()==0) std::cout<<"ERR nula";
+	if (exp->GetNonEmptyDenotationNum() == 0)
+		std::cout << "ERR nula";
 
 	std::vector<std::vector<int> > cDenot = exp->GetDenotationVec();
 	if (cDenot.size() != this->denotations.size()) {
 		std::cout << "ERR EqualDenotationVec";
 		return false;
 	}
-	std::vector<int> intersect;
+	//std::vector<int> intersect;
 	for (unsigned i = 0; i < cDenot.size(); i++) {
 
-		set_intersection(cDenot[i].begin(), cDenot[i].end(), this->denotations[i].begin(), this->denotations[i].end(),
-				back_inserter(intersect));
-
-		if (intersect.size() != cDenot[i].size()) {
+		if (cDenot[i].size() != 0 && this->denotations[i].size() == 0)
 			return false;
-		}
-		intersect.clear();
+
+		if (cDenot[i].size() == 0 && this->denotations[i].size() != 0)
+			return false;
+
+//		set_intersection(cDenot[i].begin(), cDenot[i].end(), this->denotations[i].begin(), this->denotations[i].end(),
+//				back_inserter(intersect));
+//
+//		if (intersect.size() != cDenot[i].size()) {
+//			return false;
+//		}
+//
+//		intersect.clear();
 	}
 
 	return true;
