@@ -51,6 +51,10 @@ public:
 		action = a;
 	}
 
+	inline std::string GetAction() {
+		return action;
+	}
+
 	void Print(std::vector<std::string> allObjects);
 };
 

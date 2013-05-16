@@ -7,6 +7,7 @@
 #include <map>
 #include <vector>
 #include <algorithm>
+#include <bitset>
 #include <stdlib.h>
 #include "Instance.hxx"
 #include "Expression.hxx"
@@ -31,8 +32,10 @@ vector<string> primitiveRoles;
 vector<string> allObjects;
 vector<int> allObjectsIdx;
 vector<string> actions;
+vector<vector<bool> > actionDenotations;
 vector<Instance> instances;
 vector<Rule> ruleSet;
+int runCount = 0;
 
 void initialize_concepts() {
 	for (unsigned i = 0; i < allObjects.size(); ++i)
@@ -79,13 +82,13 @@ void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 	}
 
 	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
-		if (exp->EqualDenotationVec(rootConcepts[i])) {
+		if (exp->EqualDenotationVec(rootConcepts[i], runCount)) {
 			delete exp;
 			return;
 		}
 	}
 	for (unsigned i = 0; i < candidates->size(); ++i) {
-		if (exp->EqualDenotationVec((*candidates)[i])) {
+		if (exp->EqualDenotationVec((*candidates)[i], runCount)) {
 			delete exp;
 			return;
 		}
@@ -102,7 +105,7 @@ void combine_concepts() {
 	UnaryOperator* uo;
 	BinaryOperator* bo;
 	bool hasCandidates = true;
-	int runCount = 0;
+
 	cout << "Denotation size: " << rootConcepts[0]->GetDenotationVec().size() << endl;
 	while (hasCandidates) {
 		cout << "Concepts: " << rootConcepts.size() << endl;
@@ -241,8 +244,8 @@ void get_input() {
 
 				if ((!fin.eof() && i < inst.GetNumActions() && getline(fin, line))) {
 					istringstream iss(line);
-					//getline(iss, field, '\t');
-					s.SetAction(line);
+					getline(iss, field, ' ');
+					s.SetAction(field);
 					s.SetNumState(i);
 					inst.AddState(s);
 				} else if (i == inst.GetNumActions()) {
@@ -281,7 +284,7 @@ void printout() {
 
 	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
 		rootConcepts[i]->infix(cout);
-		cout <<"-"<< rootConcepts[i]->GetNonEmptyDenotationNum()<< endl;
+		cout << "-" << rootConcepts[i]->GetNonEmptyDenotationNum() << endl;
 		vector<vector<int> > denotations = rootConcepts[i]->GetDenotationVec();
 //		for (unsigned j = 0; j < denotations.size(); ++j) {
 //			for (unsigned k = 0; k < denotations[j].size(); ++k) {
@@ -302,6 +305,23 @@ void printout() {
 //			}
 //			cout << endl;
 //		}
+	}
+	cout << "\tAction denotations" << endl;
+	for (unsigned i = 0; i < actionDenotations.size(); ++i) {
+		cout << actions[i] << ": ";
+		for (unsigned j = 0; j < actionDenotations[i].size(); ++j) {
+			if (actionDenotations[i][j])
+				cout << '+';
+			else
+				cout << '-';
+		}
+		cout << endl;
+	}
+
+	cout << "\tRuleset" << endl;
+	for (unsigned i = 0; i < ruleSet.size(); ++i) {
+		cout << ruleSet[i];
+		cout << endl;
 	}
 }
 
@@ -333,10 +353,50 @@ void learn_concepts() {
 	combine_concepts();
 }
 
+void make_policy() {
+	for (unsigned i = 0; i < actions.size(); ++i) {
+		vector<bool> tmpVec;
+		for (unsigned j = 0; j < instances.size(); ++j) {
+			for (unsigned k = 0; k < instances[j].GetStates().size(); ++k) {
+				if (actions[i].compare(instances[j][k].GetAction()) == 0)
+					tmpVec.push_back(true);
+				else
+					tmpVec.push_back(false);
+			}
+		}
+		actionDenotations.push_back(tmpVec);
+	}
+
+	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
+		vector<vector<int> > cDenot = rootConcepts[i]->GetDenotationVec();
+		if (rootConcepts[i]->GetNonEmptyDenotationNum() == 0)
+			continue;
+		int correct = 0;
+		for (unsigned j = 0; j < actions.size(); ++j) {
+			bool mistake = false;
+			for (unsigned k = 0; k < cDenot.size(); ++k) {
+				if (cDenot[k].size() > 0 && !(actionDenotations[j][k])) {
+					mistake = true;
+					break;
+				}
+				if(cDenot[k].size() > 0 && actionDenotations[j][k])
+					correct++;
+			}
+			if (!mistake) {
+				Rule r(rootConcepts[i], actions[j]);
+				r.SetCorrect(correct);
+				ruleSet.push_back(r);
+			}
+		}
+	}
+	sort(ruleSet.begin(),ruleSet.end());
+}
+
 int main(int argc, char** argv) {
 	get_input();
 	initialize_concepts();
 	learn_concepts();
+	make_policy();
 	printout();
 	cleanup();
 	return 0;

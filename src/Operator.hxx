@@ -36,7 +36,7 @@ public:
 		return denotationsRole;
 	}
 
-	bool EqualDenotationVec(Expression* exp);
+	bool EqualDenotationVec(Expression* exp, int runCount);
 	virtual void UpdateDenotations()=0;
 	virtual ~Operator();
 };
