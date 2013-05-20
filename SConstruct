@@ -11,7 +11,7 @@ common_env.Append( CPPPATH = [ os.path.abspath(p) for p in include_paths ] )
 if int(debug) == 1 :
         common_env.Append( CCFLAGS = ['-g','-Wall', '-DDEBUG' ] )
 else:
-        common_env.Append( CCFLAGS = ['-O0','-Wall', '-DNDEBUG'] )
+        common_env.Append( CCFLAGS = ['-O3','-Wall', '-DNDEBUG'] )
 #common_env.Append( CCFLAGS = ['-O3','-Wall','-DNDEBUG'] )
 common_env.Append( LIBS=[ 'aig', 'ff' ])
 common_env.Append( LIBPATH=[ os.path.abspath(p) for p in lib_paths ] )

@@ -43,7 +43,7 @@ bool Operator::EqualDenotationVec(Expression* exp, int runCount) {
 		return false;
 	}
 	std::vector<int> intersect;
-	if (runCount > 1) {
+	if (runCount > 3) {
 		for (unsigned i = 0; i < cDenot.size(); i++) {
 
 			if (cDenot[i].size() != 0 && this->denotations[i].size() == 0)
@@ -54,7 +54,9 @@ bool Operator::EqualDenotationVec(Expression* exp, int runCount) {
 
 		}
 	} else {
+
 		for (unsigned i = 0; i < cDenot.size(); i++) {
+			if(cDenot[i].size() != this->denotations[i].size()) return false;
 			set_intersection(cDenot[i].begin(), cDenot[i].end(), this->denotations[i].begin(),
 					this->denotations[i].end(), back_inserter(intersect));
 
