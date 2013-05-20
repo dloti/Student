@@ -25,6 +25,7 @@ public:
 	Expression();
 	virtual void print(std::ostream& s) const = 0;
 	virtual void infix(std::ostream& s) const = 0;
+	virtual void prefix(std::ostream& s) const = 0;
 	virtual void UpdateInterpretation() = 0;
 	virtual void ClearInterpretation() = 0;
 	virtual std::vector<int>* GetInterpretation() = 0;
@@ -46,9 +47,6 @@ public:
 	inline void SetLevel(int level) {
 		this->level = level;
 	}
-
-
-
 	virtual ~Expression();
 };
 }

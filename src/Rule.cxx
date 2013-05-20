@@ -44,6 +44,13 @@ bool Rule::operator <(const Rule& r2) const {
 		return (this->correct > r2.correct);
 }
 
+void Rule::SaveRule(std::ostream &out){
+	this->concept->prefix(out);
+	out<<std::endl;
+	out<<this->action;
+	out<<std::endl;
+}
+
 //int Rule::GetCurrentCoverage() {
 //	return this->concepts[0]->GetInterpretation()->size();
 //}

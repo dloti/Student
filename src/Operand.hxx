@@ -18,13 +18,18 @@ protected:
 	std::vector<std::vector<std::pair<int, int> > > denotationsRole;
 public:
 	Operand();
-	virtual void UpdateDenotations(std::vector<Instance> instances, std::vector<int>* allObjects) = 0;
+	virtual void UpdateDenotations(std::vector<Instance> instances,
+			std::vector<int>* allObjects) = 0;
 	void print(std::ostream& s) const {
 		s << predicate;
 		if (goal)
 			s << "g";
 	}
 	void infix(std::ostream& s) const {
+		print(s);
+	}
+
+	void prefix(std::ostream& s) const {
 		print(s);
 	}
 	inline std::string GetPredicate() {

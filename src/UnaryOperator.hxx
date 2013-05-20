@@ -19,12 +19,18 @@ public:
 		s << op;
 	}
 	void infix(std::ostream& s) const {
-		;
 		print(s);
 		s << "(";
 		child->infix(s);
 		s << ")";
 	}
+
+	void prefix(std::ostream& s) const {
+			print(s);
+			s << "(";
+			child->prefix(s);
+			s << ")";
+		}
 	void UpdateInterpretation();
 	std::vector<Expression*> GetChildren();
 };

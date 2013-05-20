@@ -48,6 +48,7 @@ public:
 	inline void IncExamples() {
 		examples++;
 	}
+	void SaveRule(std::ostream &out);
 	int GetCurrentCoverage();
 	friend std::ostream& operator<<(std::ostream &out, Rule &r);
 	friend bool operator==(Rule &r1, Rule &r2);

@@ -392,12 +392,28 @@ void make_policy() {
 	sort(ruleSet.begin(),ruleSet.end());
 }
 
+void write_policy(){
+	ofstream fout;
+	fout.open("policy.txt");
+	for(unsigned i=0;i<primitiveConcepts.size();++i)
+		fout<<primitiveConcepts[i]<<" ";
+	fout<<endl;
+	for(unsigned i=0;i<primitiveRoles.size();++i)
+		fout<<primitiveRoles[i]<<" ";
+	fout<<endl;
+	for(unsigned i=0;i<ruleSet.size();++i)
+			ruleSet[i].SaveRule(fout);
+	fout << endl;
+
+}
+
 int main(int argc, char** argv) {
 	get_input();
 	initialize_concepts();
 	learn_concepts();
 	make_policy();
 	printout();
+	write_policy();
 	cleanup();
 	return 0;
 }
