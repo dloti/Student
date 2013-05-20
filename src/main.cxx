@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <bitset>
 #include <stdlib.h>
+#include "time.hxx"
 #include "Instance.hxx"
 #include "Expression.hxx"
 #include "ConceptNode.hxx"
@@ -75,7 +76,7 @@ void combine_roles(bool first = true) {
 		rootRoles.push_back(candidates[i]);
 }
 
-void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
+inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 	if (exp->GetNonEmptyDenotationNum() == 0) {
 		delete exp;
 		return;
@@ -101,27 +102,29 @@ void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 void combine_concepts() {
 	vector<Expression*>::iterator conceptIt, conceptIt1, roleIt, roleIt1;
 	vector<Expression*> candidates;
-	//vector<Expression*> nextLayer = rootConcepts;
+	vector<Expression*> nextLayer = rootConcepts;
 	UnaryOperator* uo;
 	BinaryOperator* bo;
 	bool hasCandidates = true;
 
 	cout << "Denotation size: " << rootConcepts[0]->GetDenotationVec().size() << endl;
+
 	while (hasCandidates) {
 		cout << "Concepts: " << rootConcepts.size() << endl;
-		for (conceptIt = rootConcepts.begin(); conceptIt < rootConcepts.end(); ++conceptIt) {
+		for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
+			for (roleIt1 = rootRoles.begin(); roleIt1 < rootRoles.end(); ++roleIt1) {
+				if (roleIt == roleIt1)
+					continue;
+				bo = new Equality(*roleIt, *roleIt1);
+				insert_candidate(bo, &candidates);
+			}
+		}
+		for (conceptIt = nextLayer.begin(); conceptIt < nextLayer.end(); ++conceptIt) {
 			uo = new Not(*conceptIt, &allObjectsIdx);
 			insert_candidate(uo, &candidates);
 			for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
 				bo = new ValueRestriction(*roleIt, *conceptIt);
 				insert_candidate(bo, &candidates);
-
-				for (roleIt1 = rootRoles.begin(); roleIt1 < rootRoles.end(); ++roleIt1) {
-					if (roleIt == roleIt1)
-						continue;
-					bo = new Equality(*roleIt, *roleIt1);
-					insert_candidate(bo, &candidates);
-				}
 			}
 			for (conceptIt1 = rootConcepts.begin(); conceptIt1 < rootConcepts.end(); ++conceptIt1) {
 				if (conceptIt == conceptIt1)
@@ -133,9 +136,9 @@ void combine_concepts() {
 
 		for (unsigned i = 0; i < candidates.size(); ++i)
 			rootConcepts.push_back(candidates[i]);
-		//nextLayer = candidates;
 		if (candidates.size() == 0)
 			hasCandidates = false;
+		nextLayer = candidates;
 		candidates.clear();
 		++runCount;
 		cout << "Pass: " << runCount << endl;
@@ -285,7 +288,7 @@ void printout() {
 	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
 		rootConcepts[i]->infix(cout);
 		cout << "-" << rootConcepts[i]->GetNonEmptyDenotationNum() << endl;
-		vector<vector<int> > denotations = rootConcepts[i]->GetDenotationVec();
+//		vector<vector<int> > denotations = rootConcepts[i]->GetDenotationVec();
 //		for (unsigned j = 0; j < denotations.size(); ++j) {
 //			for (unsigned k = 0; k < denotations[j].size(); ++k) {
 //				cout << allObjects[denotations[j][k]] << " ";
@@ -379,7 +382,7 @@ void make_policy() {
 					mistake = true;
 					break;
 				}
-				if(cDenot[k].size() > 0 && actionDenotations[j][k])
+				if (cDenot[k].size() > 0 && actionDenotations[j][k])
 					correct++;
 			}
 			if (!mistake) {
@@ -389,20 +392,20 @@ void make_policy() {
 			}
 		}
 	}
-	sort(ruleSet.begin(),ruleSet.end());
+	sort(ruleSet.begin(), ruleSet.end());
 }
 
-void write_policy(){
+void write_policy() {
 	ofstream fout;
 	fout.open("policy.txt");
-	for(unsigned i=0;i<primitiveConcepts.size();++i)
-		fout<<primitiveConcepts[i]<<" ";
-	fout<<endl;
-	for(unsigned i=0;i<primitiveRoles.size();++i)
-		fout<<primitiveRoles[i]<<" ";
-	fout<<endl;
-	for(unsigned i=0;i<ruleSet.size();++i)
-			ruleSet[i].SaveRule(fout);
+	for (unsigned i = 0; i < primitiveConcepts.size(); ++i)
+		fout << primitiveConcepts[i] << " ";
+	fout << endl;
+	for (unsigned i = 0; i < primitiveRoles.size(); ++i)
+		fout << primitiveRoles[i] << " ";
+	fout << endl;
+	for (unsigned i = 0; i < ruleSet.size(); ++i)
+		ruleSet[i].SaveRule(fout);
 	fout << endl;
 
 }
@@ -410,7 +413,13 @@ void write_policy(){
 int main(int argc, char** argv) {
 	get_input();
 	initialize_concepts();
+	float t0, tf;
+	t0 = time_used();
 	learn_concepts();
+	tf = time_used();
+	cout << "Learning time: ";
+	report_interval(t0, tf, cout);
+	cout << endl;
 	make_policy();
 	printout();
 	write_policy();
