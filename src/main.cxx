@@ -25,7 +25,8 @@
 
 using namespace std;
 using namespace expression;
-
+map<vector<bool>, vector<Expression*> > candidateDenotMap;
+map<vector<bool>, vector<Expression*> > rootDenotMap;
 vector<Expression*> rootConcepts;
 vector<Expression*> rootRoles;
 vector<string> primitiveConcepts;
@@ -81,21 +82,47 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 		delete exp;
 		return;
 	}
+	vector<bool> signature = exp->GetSignature();
+	map<vector<bool>, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
+	if (itr != rootDenotMap.end()) {
+		if (runCount > 3) {
+			delete exp;
+			return;
+		}
+		for (unsigned i = 0; i < itr->second.size(); ++i) {
+			if (exp->EqualDenotationVec(itr->second[i])) {
+				delete exp;
+				return;
+			}
+		}
+		rootDenotMap[signature].push_back(exp);
+	} else {
+		vector<Expression*> tmp;
+		tmp.push_back(exp);
+		rootDenotMap[signature] = tmp;
+	}
 
-	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
-		if (exp->EqualDenotationVec(rootConcepts[i], runCount)) {
+	map<vector<bool>, vector<Expression*> >::iterator it = candidateDenotMap.find(signature);
+	if (it != candidateDenotMap.end()) {
+		if (runCount > 3) {
 			delete exp;
 			return;
 		}
-	}
-	for (unsigned i = 0; i < candidates->size(); ++i) {
-		if (exp->EqualDenotationVec((*candidates)[i], runCount)) {
-			delete exp;
-			return;
+		for (unsigned i = 0; i < it->second.size(); ++i) {
+			if (exp->EqualDenotationVec(it->second[i])) {
+				delete exp;
+				return;
+			}
 		}
+		candidateDenotMap[signature].push_back(exp);
+	} else {
+		vector<Expression*> tmp;
+		tmp.push_back(exp);
+		candidateDenotMap[signature] = tmp;
 	}
+
 	candidates->push_back(exp);
-	if (candidates->size() % 500 == 0)
+	if (candidates->size() % 1000 == 0)
 		cout << "Candidates: " << candidates->size() << endl;
 }
 
@@ -105,20 +132,21 @@ void combine_concepts() {
 	vector<Expression*> nextLayer = rootConcepts;
 	UnaryOperator* uo;
 	BinaryOperator* bo;
-	bool hasCandidates = true;
 
+	bool hasCandidates = true;
 	cout << "Denotation size: " << rootConcepts[0]->GetDenotationVec().size() << endl;
 
+	for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
+		for (roleIt1 = rootRoles.begin(); roleIt1 < rootRoles.end(); ++roleIt1) {
+			if (roleIt == roleIt1)
+				continue;
+			bo = new Equality(*roleIt, *roleIt1);
+			insert_candidate(bo, &candidates);
+		}
+	}
 	while (hasCandidates) {
 		cout << "Concepts: " << rootConcepts.size() << endl;
-		for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
-			for (roleIt1 = rootRoles.begin(); roleIt1 < rootRoles.end(); ++roleIt1) {
-				if (roleIt == roleIt1)
-					continue;
-				bo = new Equality(*roleIt, *roleIt1);
-				insert_candidate(bo, &candidates);
-			}
-		}
+		int cnt = 1;
 		for (conceptIt = nextLayer.begin(); conceptIt < nextLayer.end(); ++conceptIt) {
 			uo = new Not(*conceptIt, &allObjectsIdx);
 			insert_candidate(uo, &candidates);
@@ -126,12 +154,16 @@ void combine_concepts() {
 				bo = new ValueRestriction(*roleIt, *conceptIt);
 				insert_candidate(bo, &candidates);
 			}
+
 			for (conceptIt1 = rootConcepts.begin(); conceptIt1 < rootConcepts.end(); ++conceptIt1) {
 				if (conceptIt == conceptIt1)
 					continue;
 				bo = new Join(*conceptIt, *conceptIt1);
 				insert_candidate(bo, &candidates);
+
 			}
+			if(++cnt%10000==0)
+				cout<<"Evaluated: "<<cnt<<" concepts from current layer!"<<endl;
 		}
 
 		for (unsigned i = 0; i < candidates.size(); ++i)
@@ -140,6 +172,7 @@ void combine_concepts() {
 			hasCandidates = false;
 		nextLayer = candidates;
 		candidates.clear();
+		candidateDenotMap.clear();
 		++runCount;
 		cout << "Pass: " << runCount << endl;
 	}

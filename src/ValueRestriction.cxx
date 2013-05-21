@@ -45,11 +45,12 @@ void ValueRestriction::UpdateDenotations() {
 		}
 		it = riFirst.begin();
 		end = riFirst.end();
+		std::sort(it,end);
 		std::vector<int>::iterator first2 = cDenot[i].begin();
 		std::vector<int>::iterator last2 = cDenot[i].end();
 		std::set_intersection(it, end, first2, last2, std::back_inserter(tmpInterpretation));
 		if(tmpInterpretation.size()>0) this->nonEmptyDenot++;
-		std::sort(tmpInterpretation.begin(),tmpInterpretation.end());
+
 		this->denotations.push_back(tmpInterpretation);
 		tmpInterpretation.clear();
 	}
@@ -68,6 +69,7 @@ void ValueRestriction::UpdateInterpretation() {
 	}
 	it = riFirst.begin();
 	end = riFirst.end();
+	std::sort(it,end);
 	std::vector<int>::iterator first2 = this->right->GetInterpretation()->begin();
 	std::vector<int>::iterator last2 = this->right->GetInterpretation()->end();
 

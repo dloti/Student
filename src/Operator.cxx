@@ -29,7 +29,7 @@ std::vector<std::pair<int, int> >* Operator::GetRoleInterpretation() {
 	return &(this->roleInterpretation);
 }
 
-bool Operator::EqualDenotationVec(Expression* exp, int runCount) {
+bool Operator::EqualDenotationVec(Expression* exp) {
 
 	if (exp->GetNonEmptyDenotationNum() != this->nonEmptyDenot)
 		return false;
@@ -43,17 +43,6 @@ bool Operator::EqualDenotationVec(Expression* exp, int runCount) {
 		return false;
 	}
 	std::vector<int> intersect;
-	if (runCount > 3) {
-		for (unsigned i = 0; i < cDenot.size(); i++) {
-
-			if (cDenot[i].size() != 0 && this->denotations[i].size() == 0)
-				return false;
-
-			if (cDenot[i].size() == 0 && this->denotations[i].size() != 0)
-				return false;
-
-		}
-	} else {
 
 		for (unsigned i = 0; i < cDenot.size(); i++) {
 			if(cDenot[i].size() != this->denotations[i].size()) return false;
@@ -65,7 +54,6 @@ bool Operator::EqualDenotationVec(Expression* exp, int runCount) {
 
 			intersect.clear();
 		}
-	}
 	return true;
 }
 

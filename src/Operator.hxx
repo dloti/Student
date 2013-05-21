@@ -13,9 +13,6 @@ namespace expression {
 class Operator: public Expression {
 protected:
 	char op;
-	int nonEmptyDenot;
-	std::vector<std::vector<int> > denotations;
-	std::vector<std::vector<std::pair<int, int> > > denotationsRole;
 	std::vector<int> interpretation;
 	std::vector<std::pair<int, int> > roleInterpretation;
 public:
@@ -24,19 +21,7 @@ public:
 	std::vector<int>* GetInterpretation();
 	std::vector<std::pair<int, int> >* GetRoleInterpretation();
 
-	inline int GetNonEmptyDenotationNum() {
-		return this->nonEmptyDenot;
-	}
-
-	inline std::vector<std::vector<int> > GetDenotationVec() {
-		return denotations;
-	}
-
-	inline std::vector<std::vector<std::pair<int, int> > > GetDenotationRoleVec() {
-		return denotationsRole;
-	}
-
-	bool EqualDenotationVec(Expression* exp, int runCount);
+	bool EqualDenotationVec(Expression* exp);
 	virtual void UpdateDenotations()=0;
 	virtual ~Operator();
 };
