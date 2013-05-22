@@ -30,7 +30,6 @@ std::vector<std::pair<int, int> >* Operator::GetRoleInterpretation() {
 }
 
 bool Operator::EqualDenotationVec(Expression* exp) {
-
 	if (exp->GetNonEmptyDenotationNum() != this->nonEmptyDenot)
 		return false;
 

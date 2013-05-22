@@ -83,9 +83,10 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 		return;
 	}
 	vector<bool> signature = exp->GetSignature();
-	map<vector<bool>, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
+	map<vector<bool>, vector<Expression*> >::iterator itr = rootDenotMap.find(
+			signature);
 	if (itr != rootDenotMap.end()) {
-		if (runCount > 3) {
+		if (runCount > 0) {
 			delete exp;
 			return;
 		}
@@ -102,9 +103,10 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 		rootDenotMap[signature] = tmp;
 	}
 
-	map<vector<bool>, vector<Expression*> >::iterator it = candidateDenotMap.find(signature);
+	map<vector<bool>, vector<Expression*> >::iterator it =
+			candidateDenotMap.find(signature);
 	if (it != candidateDenotMap.end()) {
-		if (runCount > 3) {
+		if (runCount > 0) {
 			delete exp;
 			return;
 		}
@@ -134,10 +136,25 @@ void combine_concepts() {
 	BinaryOperator* bo;
 
 	bool hasCandidates = true;
-	cout << "Denotation size: " << rootConcepts[0]->GetDenotationVec().size() << endl;
+	cout << "Denotation size: " << rootConcepts[0]->GetDenotationVec().size()
+			<< endl;
+
+	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
+		vector<bool> signature = rootConcepts[i]->GetSignature();
+		map<vector<bool>, vector<Expression*> >::iterator itr =
+				rootDenotMap.find(signature);
+		if (itr != rootDenotMap.end()) {
+			itr->second.push_back(rootConcepts[i]);
+		} else {
+			vector<Expression*> tmp;
+			tmp.push_back(rootConcepts[i]);
+			rootDenotMap[signature] = tmp;
+		}
+	}
 
 	for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
-		for (roleIt1 = rootRoles.begin(); roleIt1 < rootRoles.end(); ++roleIt1) {
+		for (roleIt1 = rootRoles.begin(); roleIt1 < rootRoles.end();
+				++roleIt1) {
 			if (roleIt == roleIt1)
 				continue;
 			bo = new Equality(*roleIt, *roleIt1);
@@ -147,23 +164,27 @@ void combine_concepts() {
 	while (hasCandidates) {
 		cout << "Concepts: " << rootConcepts.size() << endl;
 		int cnt = 1;
-		for (conceptIt = nextLayer.begin(); conceptIt < nextLayer.end(); ++conceptIt) {
+		for (conceptIt = nextLayer.begin(); conceptIt < nextLayer.end();
+				++conceptIt) {
 			uo = new Not(*conceptIt, &allObjectsIdx);
 			insert_candidate(uo, &candidates);
-			for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
+			for (roleIt = rootRoles.begin(); roleIt < rootRoles.end();
+					++roleIt) {
 				bo = new ValueRestriction(*roleIt, *conceptIt);
 				insert_candidate(bo, &candidates);
 			}
 
-			for (conceptIt1 = rootConcepts.begin(); conceptIt1 < rootConcepts.end(); ++conceptIt1) {
+			for (conceptIt1 = rootConcepts.begin();
+					conceptIt1 < rootConcepts.end(); ++conceptIt1) {
 				if (conceptIt == conceptIt1)
 					continue;
 				bo = new Join(*conceptIt, *conceptIt1);
 				insert_candidate(bo, &candidates);
 
 			}
-			if(++cnt%10000==0)
-				cout<<"Evaluated: "<<cnt<<" concepts from current layer!"<<endl;
+			if (++cnt % 10000 == 0)
+				cout << "Evaluated: " << cnt << " concepts from current layer!"
+						<< endl;
 		}
 
 		for (unsigned i = 0; i < candidates.size(); ++i)
@@ -179,7 +200,8 @@ void combine_concepts() {
 }
 
 int get_obj_pos(string object) {
-	int pos = std::find(allObjects.begin(), allObjects.end(), object) - allObjects.begin();
+	int pos = std::find(allObjects.begin(), allObjects.end(), object)
+			- allObjects.begin();
 	if (pos >= allObjects.size()) {
 		cout << "ERR " << object << endl;
 		return -1;
@@ -240,7 +262,8 @@ void get_input() {
 							if (pos > -1)
 								conceptInterpretation.push_back(pos);
 						}
-						s.AddConceptInterpretation(cname, conceptInterpretation);
+						s.AddConceptInterpretation(cname,
+								conceptInterpretation);
 						conceptInterpretation.clear();
 					}
 				}
@@ -278,7 +301,8 @@ void get_input() {
 					}
 				}
 
-				if ((!fin.eof() && i < inst.GetNumActions() && getline(fin, line))) {
+				if ((!fin.eof() && i < inst.GetNumActions()
+						&& getline(fin, line))) {
 					istringstream iss(line);
 					getline(iss, field, ' ');
 					s.SetAction(field);
@@ -378,9 +402,11 @@ void cleanup() {
 
 void initialize() {
 	for (unsigned i = 0; i < rootConcepts.size(); ++i)
-		((ConceptNode*) rootConcepts[i])->UpdateDenotations(instances, &allObjectsIdx);
+		((ConceptNode*) rootConcepts[i])->UpdateDenotations(instances,
+				&allObjectsIdx);
 	for (unsigned i = 0; i < rootRoles.size(); ++i)
-		((RoleNode*) rootRoles[i])->UpdateDenotations(instances, &allObjectsIdx);
+		((RoleNode*) rootRoles[i])->UpdateDenotations(instances,
+				&allObjectsIdx);
 }
 
 void learn_concepts() {

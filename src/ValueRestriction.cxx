@@ -50,7 +50,7 @@ void ValueRestriction::UpdateDenotations() {
 		std::vector<int>::iterator last2 = cDenot[i].end();
 		std::set_intersection(it, end, first2, last2, std::back_inserter(tmpInterpretation));
 		if(tmpInterpretation.size()>0) this->nonEmptyDenot++;
-
+		//sort(tmpInterpretation.begin(), tmpInterpretation.begin());
 		this->denotations.push_back(tmpInterpretation);
 		tmpInterpretation.clear();
 	}
