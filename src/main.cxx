@@ -86,7 +86,7 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 	map<vector<bool>, vector<Expression*> >::iterator itr = rootDenotMap.find(
 			signature);
 	if (itr != rootDenotMap.end()) {
-		if (runCount > 0) {
+		if (runCount > 1) {
 			delete exp;
 			return;
 		}
@@ -106,7 +106,7 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 	map<vector<bool>, vector<Expression*> >::iterator it =
 			candidateDenotMap.find(signature);
 	if (it != candidateDenotMap.end()) {
-		if (runCount > 0) {
+		if (runCount > 1) {
 			delete exp;
 			return;
 		}
