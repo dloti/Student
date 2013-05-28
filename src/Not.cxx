@@ -23,14 +23,16 @@ void Not::UpdateDenotations() {
 		return;
 	std::vector<std::vector<int> > cDenot = this->child->GetDenotationVec();
 	std::vector<int> tmpInterpretation;
-	tmpInterpretation.reserve(cDenot[0].size());
 	for (unsigned i = 0; i < cDenot.size(); ++i) {
-		for (unsigned j = 0; j < allObjects->size(); ++j) {
-			if (std::find(cDenot[i].begin(), cDenot[i].end(), j) == cDenot[i].end()) {
-				tmpInterpretation.push_back((*allObjects)[j]);
+		int k=0;
+		for (unsigned j = 0; j < allObjects->size() ; ++j) {
+			if (k < cDenot[i].size() && j == cDenot[i][k]){
+				k++;
+				continue;
 			}
+			else
+				tmpInterpretation.push_back(j);
 		}
-		std::sort(tmpInterpretation.begin(), tmpInterpretation.end());
 		if (tmpInterpretation.size() > 0)
 			this->nonEmptyDenot++;
 		this->denotations.push_back(tmpInterpretation);

@@ -22,6 +22,7 @@
 #include "Equality.hxx"
 #include "ValueRestriction.hxx"
 #include "Rule.hxx"
+#include "PreOps.hxx"
 
 using namespace std;
 using namespace expression;
@@ -38,6 +39,7 @@ vector<vector<bool> > actionDenotations;
 vector<Instance> instances;
 vector<Rule> ruleSet;
 int runCount = 0;
+
 
 void initialize_concepts() {
 	for (unsigned i = 0; i < allObjects.size(); ++i)
@@ -345,7 +347,7 @@ void printout() {
 	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
 		rootConcepts[i]->infix(cout);
 		cout << "-" << rootConcepts[i]->GetNonEmptyDenotationNum() << endl;
-//		vector<vector<int> > denotations = rootConcepts[i]->GetDenotationVec();
+		vector<vector<int> > denotations = rootConcepts[i]->GetDenotationVec();
 //		for (unsigned j = 0; j < denotations.size(); ++j) {
 //			for (unsigned k = 0; k < denotations[j].size(); ++k) {
 //				cout << allObjects[denotations[j][k]] << " ";
@@ -474,14 +476,16 @@ int main(int argc, char** argv) {
 	initialize_concepts();
 	float t0, tf;
 	t0 = time_used();
-	learn_concepts();
+	//learn_concepts();
 	tf = time_used();
 	cout << "Learning time: ";
-	report_interval(t0, tf, cout);
+	//report_interval(t0, tf, cout);
 	cout << endl;
-	make_policy();
-	printout();
-	write_policy();
+	PreOps preops(3);
+	preops.MakeSubsets();
+	//make_policy();
+	//printout();
+	//write_policy();
 	cleanup();
 	return 0;
 }
