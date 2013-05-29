@@ -8,15 +8,16 @@
 #include<iostream>
 #include "Join.hxx"
 namespace expression {
-Join::Join(Expression* left, Expression* right) :
+Join::Join(Expression* left, Expression* right, PreOps* preops) :
 		BinaryOperator('^') {
 	this->SetLeft(left);
 	this->SetRight(right);
-	this->UpdateDenotations();
+	this->nonEmptyDenot = 0;
+	this->preops = preops;
+	this->UpdateSimpleDenotations();
 }
 
 void Join::UpdateDenotations() {
-	this->nonEmptyDenot = 0;
 	std::vector<std::vector<int> > lDenot = this->left->GetDenotationVec();
 	std::vector<std::vector<int> > rDenot = this->right->GetDenotationVec();
 	if (lDenot.size() != rDenot.size()) {
@@ -35,6 +36,23 @@ void Join::UpdateDenotations() {
 		//std::sort(tmpInterpretation.begin(),tmpInterpretation.end());
 		this->denotations.push_back(tmpInterpretation);
 		tmpInterpretation.clear();
+	}
+}
+
+void Join::UpdateSimpleDenotations() {
+	std::vector<std::vector<int> >* subsets = preops->GetSubsets();
+	std::map<std::pair<int, int>, int>* joinMap = preops->GetJoinMap();
+	std::vector<int>* lDenot = this->left->GetSimpleDenotationVec();
+	std::vector<int>* rDenot = this->right->GetSimpleDenotationVec();
+	if (lDenot->size() != rDenot->size()) {
+		std::cout << "ERR Join";
+		return;
+	}
+	for (unsigned i = 0; i < lDenot->size(); ++i) {
+		std::pair<int, int> p((*lDenot)[i], (*rDenot)[i]);
+		if ((*joinMap)[p] != 0)
+			this->nonEmptyDenot++;
+		this->simpleDenotations.push_back((*joinMap)[p]);
 	}
 }
 

@@ -12,6 +12,7 @@
 #include <vector>
 #include <algorithm>
 #include "Instance.hxx"
+#include "PreOps.hxx"
 #include "State.hxx"
 //#include <planning/Types.hxx>
 //#include <planning/PDDL_Type.hxx>
@@ -19,9 +20,11 @@
 namespace expression {
 class Expression {
 protected:
+	PreOps* preops;
 	int level;
 	bool isRole;
 	int nonEmptyDenot;
+	std::vector<int> simpleDenotations;
 	std::vector<std::vector<int> > denotations;
 	std::vector<std::vector<std::pair<int, int> > > denotationsRole;
 public:
@@ -34,6 +37,11 @@ public:
 	virtual std::vector<int>* GetInterpretation() = 0;
 	virtual std::vector<std::pair<int, int> >* GetRoleInterpretation() = 0;
 	virtual std::vector<Expression*> GetChildren() = 0;
+	void SimplifyDenotations();
+
+	inline void SetPreops(PreOps* preops){
+		this->preops = preops;
+	}
 
 	inline int GetNonEmptyDenotationNum() {
 		return this->nonEmptyDenot;
@@ -41,13 +49,22 @@ public:
 
 	inline std::vector<bool> GetSignature() {
 		std::vector<bool> ret;
-		for(unsigned i=0;i<denotations.size();++i)
-			ret.push_back(denotations[i].size());
+		if (simpleDenotations.size() == 0) {
+			for (unsigned i = 0; i < denotations.size(); ++i)
+				ret.push_back(denotations[i].size());
+			return ret;
+		}
+		for (unsigned i = 0; i < simpleDenotations.size(); ++i)
+			ret.push_back(simpleDenotations[i]);
 		return ret;
 	}
 
 	inline std::vector<std::vector<int> > GetDenotationVec() {
 		return denotations;
+	}
+
+	inline std::vector<int>* GetSimpleDenotationVec() {
+		return &simpleDenotations;
 	}
 
 	inline std::vector<std::vector<std::pair<int, int> > > GetDenotationRoleVec() {

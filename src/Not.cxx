@@ -7,10 +7,12 @@
 
 #include "Not.hxx"
 namespace expression {
-Not::Not(Expression* child, std::vector<int>* allObjects) :
+Not::Not(Expression* child, std::vector<int>* allObjects, PreOps* preops) :
 		UnaryOperator(child, '!') {
 	this->allObjects = allObjects;
-	this->UpdateDenotations();
+	this->preops = preops;
+	this->nonEmptyDenot = 0;
+	this->UpdateSimpleDenotations();
 }
 
 std::vector<int>* Not::GetInterpretation() {
@@ -18,25 +20,36 @@ std::vector<int>* Not::GetInterpretation() {
 	return &(this->interpretation);
 }
 void Not::UpdateDenotations() {
-	this->nonEmptyDenot = 0;
 	if (typeid(*child) == typeid(Not))
 		return;
 	std::vector<std::vector<int> > cDenot = this->child->GetDenotationVec();
 	std::vector<int> tmpInterpretation;
 	for (unsigned i = 0; i < cDenot.size(); ++i) {
-		int k=0;
-		for (unsigned j = 0; j < allObjects->size() ; ++j) {
-			if (k < cDenot[i].size() && j == cDenot[i][k]){
+		int k = 0;
+		for (unsigned j = 0; j < allObjects->size(); ++j) {
+			if (k < cDenot[i].size() && j == cDenot[i][k]) {
 				k++;
 				continue;
-			}
-			else
+			} else
 				tmpInterpretation.push_back(j);
 		}
 		if (tmpInterpretation.size() > 0)
 			this->nonEmptyDenot++;
 		this->denotations.push_back(tmpInterpretation);
 		tmpInterpretation.clear();
+	}
+}
+
+void Not::UpdateSimpleDenotations() {
+	if (typeid(*child) == typeid(Not))
+		return;
+	std::vector<int>* cDenot = this->child->GetSimpleDenotationVec();
+	std::map<int, int>* notMap = preops->GetNotMap();
+	for (unsigned i = 0; i < cDenot->size(); ++i) {
+		int notElem = (*notMap)[(*cDenot)[i]];
+		if (notElem != 0)
+			this->nonEmptyDenot++;
+		this->simpleDenotations.push_back(notElem);
 	}
 }
 

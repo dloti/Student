@@ -43,16 +43,33 @@ bool Operator::EqualDenotationVec(Expression* exp) {
 	}
 	std::vector<int> intersect;
 
-		for (unsigned i = 0; i < cDenot.size(); i++) {
-			if(cDenot[i].size() != this->denotations[i].size()) return false;
-			set_intersection(cDenot[i].begin(), cDenot[i].end(), this->denotations[i].begin(),
-					this->denotations[i].end(), back_inserter(intersect));
+	for (unsigned i = 0; i < cDenot.size(); i++) {
+		if (cDenot[i].size() != this->denotations[i].size())
+			return false;
+		set_intersection(cDenot[i].begin(), cDenot[i].end(), this->denotations[i].begin(), this->denotations[i].end(),
+				back_inserter(intersect));
 
-			if (intersect.size() != cDenot[i].size())
-				return false;
+		if (intersect.size() != cDenot[i].size())
+			return false;
 
-			intersect.clear();
-		}
+		intersect.clear();
+	}
+	return true;
+}
+
+bool Operator::EqualSimpleDenotationVec(Expression* exp) {
+	if (exp->GetNonEmptyDenotationNum() != this->nonEmptyDenot)
+		return false;
+
+	this->SimplifyDenotations();
+	exp->SimplifyDenotations();
+
+	std::vector<int>* sdenot = exp->GetSimpleDenotationVec();
+
+	for (unsigned i = 0; i < sdenot->size(); i++) {
+		if (this->simpleDenotations[i] != (*sdenot)[i])
+			return false;
+	}
 	return true;
 }
 

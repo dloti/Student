@@ -20,9 +20,11 @@ public:
 	void ClearInterpretation();
 	std::vector<int>* GetInterpretation();
 	std::vector<std::pair<int, int> >* GetRoleInterpretation();
-
+	bool EqualSimpleDenotationVec(Expression* exp);
 	bool EqualDenotationVec(Expression* exp);
 	virtual void UpdateDenotations()=0;
+	virtual void UpdateSimpleDenotations() = 0;
+
 	virtual ~Operator();
 };
 }

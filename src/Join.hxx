@@ -8,11 +8,13 @@
 #ifndef JOIN_HXX_
 #define JOIN_HXX_
 #include "BinaryOperator.hxx"
+#include "PreOps.hxx"
 namespace expression {
 class Join : public BinaryOperator {
 public:
-	Join(Expression* left, Expression* right);
+	Join(Expression* left, Expression* right, PreOps* preops);
 	void UpdateDenotations();
+	void UpdateSimpleDenotations();
 	std::vector<int>* GetInterpretation();
 	void UpdateInterpretation();
 	virtual ~Join();

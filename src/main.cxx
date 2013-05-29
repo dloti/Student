@@ -40,7 +40,6 @@ vector<Instance> instances;
 vector<Rule> ruleSet;
 int runCount = 0;
 
-
 void initialize_concepts() {
 	for (unsigned i = 0; i < allObjects.size(); ++i)
 		allObjectsIdx.push_back(i);
@@ -85,15 +84,14 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 		return;
 	}
 	vector<bool> signature = exp->GetSignature();
-	map<vector<bool>, vector<Expression*> >::iterator itr = rootDenotMap.find(
-			signature);
+	map<vector<bool>, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
 	if (itr != rootDenotMap.end()) {
 		if (runCount > 1) {
 			delete exp;
 			return;
 		}
 		for (unsigned i = 0; i < itr->second.size(); ++i) {
-			if (exp->EqualDenotationVec(itr->second[i])) {
+			if (exp->EqualSimpleDenotationVec(itr->second[i])) {
 				delete exp;
 				return;
 			}
@@ -105,15 +103,14 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 		rootDenotMap[signature] = tmp;
 	}
 
-	map<vector<bool>, vector<Expression*> >::iterator it =
-			candidateDenotMap.find(signature);
+	map<vector<bool>, vector<Expression*> >::iterator it = candidateDenotMap.find(signature);
 	if (it != candidateDenotMap.end()) {
 		if (runCount > 1) {
 			delete exp;
 			return;
 		}
 		for (unsigned i = 0; i < it->second.size(); ++i) {
-			if (exp->EqualDenotationVec(it->second[i])) {
+			if (exp->EqualSimpleDenotationVec(it->second[i])) {
 				delete exp;
 				return;
 			}
@@ -125,6 +122,7 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 		candidateDenotMap[signature] = tmp;
 	}
 
+	exp->SimplifyDenotations();
 	candidates->push_back(exp);
 	if (candidates->size() % 1000 == 0)
 		cout << "Candidates: " << candidates->size() << endl;
@@ -136,15 +134,16 @@ void combine_concepts() {
 	vector<Expression*> nextLayer = rootConcepts;
 	UnaryOperator* uo;
 	BinaryOperator* bo;
+	PreOps preops(allObjects.size());
 
 	bool hasCandidates = true;
-	cout << "Denotation size: " << rootConcepts[0]->GetDenotationVec().size()
-			<< endl;
+	cout << "Denotation size: " << rootConcepts[0]->GetDenotationVec().size() << endl;
 
 	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
+		rootConcepts[i]->SetPreops(&preops);
+		rootConcepts[i]->SimplifyDenotations();
 		vector<bool> signature = rootConcepts[i]->GetSignature();
-		map<vector<bool>, vector<Expression*> >::iterator itr =
-				rootDenotMap.find(signature);
+		map<vector<bool>, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
 		if (itr != rootDenotMap.end()) {
 			itr->second.push_back(rootConcepts[i]);
 		} else {
@@ -155,38 +154,33 @@ void combine_concepts() {
 	}
 
 	for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
-		for (roleIt1 = rootRoles.begin(); roleIt1 < rootRoles.end();
-				++roleIt1) {
+		for (roleIt1 = rootRoles.begin(); roleIt1 < rootRoles.end(); ++roleIt1) {
 			if (roleIt == roleIt1)
 				continue;
-			bo = new Equality(*roleIt, *roleIt1);
+			bo = new Equality(*roleIt, *roleIt1, &preops);
 			insert_candidate(bo, &candidates);
 		}
 	}
 	while (hasCandidates) {
 		cout << "Concepts: " << rootConcepts.size() << endl;
 		int cnt = 1;
-		for (conceptIt = nextLayer.begin(); conceptIt < nextLayer.end();
-				++conceptIt) {
-			uo = new Not(*conceptIt, &allObjectsIdx);
+		for (conceptIt = nextLayer.begin(); conceptIt < nextLayer.end(); ++conceptIt) {
+			uo = new Not(*conceptIt, &allObjectsIdx, &preops);
 			insert_candidate(uo, &candidates);
-			for (roleIt = rootRoles.begin(); roleIt < rootRoles.end();
-					++roleIt) {
-				bo = new ValueRestriction(*roleIt, *conceptIt);
+			for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
+				bo = new ValueRestriction(*roleIt, *conceptIt, &preops);
 				insert_candidate(bo, &candidates);
 			}
 
-			for (conceptIt1 = rootConcepts.begin();
-					conceptIt1 < rootConcepts.end(); ++conceptIt1) {
+			for (conceptIt1 = rootConcepts.begin(); conceptIt1 < rootConcepts.end(); ++conceptIt1) {
 				if (conceptIt == conceptIt1)
 					continue;
-				bo = new Join(*conceptIt, *conceptIt1);
+				bo = new Join(*conceptIt, *conceptIt1, &preops);
 				insert_candidate(bo, &candidates);
 
 			}
 			if (++cnt % 10000 == 0)
-				cout << "Evaluated: " << cnt << " concepts from current layer!"
-						<< endl;
+				cout << "Evaluated: " << cnt << " concepts from current layer!" << endl;
 		}
 
 		for (unsigned i = 0; i < candidates.size(); ++i)
@@ -202,8 +196,7 @@ void combine_concepts() {
 }
 
 int get_obj_pos(string object) {
-	int pos = std::find(allObjects.begin(), allObjects.end(), object)
-			- allObjects.begin();
+	int pos = std::find(allObjects.begin(), allObjects.end(), object) - allObjects.begin();
 	if (pos >= allObjects.size()) {
 		cout << "ERR " << object << endl;
 		return -1;
@@ -264,8 +257,7 @@ void get_input() {
 							if (pos > -1)
 								conceptInterpretation.push_back(pos);
 						}
-						s.AddConceptInterpretation(cname,
-								conceptInterpretation);
+						s.AddConceptInterpretation(cname, conceptInterpretation);
 						conceptInterpretation.clear();
 					}
 				}
@@ -303,8 +295,7 @@ void get_input() {
 					}
 				}
 
-				if ((!fin.eof() && i < inst.GetNumActions()
-						&& getline(fin, line))) {
+				if ((!fin.eof() && i < inst.GetNumActions() && getline(fin, line))) {
 					istringstream iss(line);
 					getline(iss, field, ' ');
 					s.SetAction(field);
@@ -348,12 +339,12 @@ void printout() {
 		rootConcepts[i]->infix(cout);
 		cout << "-" << rootConcepts[i]->GetNonEmptyDenotationNum() << endl;
 		vector<vector<int> > denotations = rootConcepts[i]->GetDenotationVec();
-//		for (unsigned j = 0; j < denotations.size(); ++j) {
-//			for (unsigned k = 0; k < denotations[j].size(); ++k) {
-//				cout << allObjects[denotations[j][k]] << " ";
-//			}
-//			cout << endl;
-//		}
+		for (unsigned j = 0; j < denotations.size(); ++j) {
+			for (unsigned k = 0; k < denotations[j].size(); ++k) {
+				cout << allObjects[denotations[j][k]] << " ";
+			}
+			cout << endl;
+		}
 	}
 
 	for (unsigned i = 0; i < rootRoles.size(); ++i) {
@@ -404,11 +395,9 @@ void cleanup() {
 
 void initialize() {
 	for (unsigned i = 0; i < rootConcepts.size(); ++i)
-		((ConceptNode*) rootConcepts[i])->UpdateDenotations(instances,
-				&allObjectsIdx);
+		((ConceptNode*) rootConcepts[i])->UpdateDenotations(instances, &allObjectsIdx);
 	for (unsigned i = 0; i < rootRoles.size(); ++i)
-		((RoleNode*) rootRoles[i])->UpdateDenotations(instances,
-				&allObjectsIdx);
+		((RoleNode*) rootRoles[i])->UpdateDenotations(instances, &allObjectsIdx);
 }
 
 void learn_concepts() {
@@ -476,16 +465,14 @@ int main(int argc, char** argv) {
 	initialize_concepts();
 	float t0, tf;
 	t0 = time_used();
-	//learn_concepts();
+	learn_concepts();
 	tf = time_used();
 	cout << "Learning time: ";
-	//report_interval(t0, tf, cout);
+	report_interval(t0, tf, cout);
 	cout << endl;
-	PreOps preops(3);
-	preops.MakeSubsets();
-	//make_policy();
-	//printout();
-	//write_policy();
+	make_policy();
+	printout();
+	write_policy();
 	cleanup();
 	return 0;
 }

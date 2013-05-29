@@ -11,10 +11,11 @@
 namespace expression {
 class Equality : public BinaryOperator {
 public:
-	Equality(Expression* left, Expression* right);
+	Equality(Expression* left, Expression* right,  PreOps* preops);
 	void SetLeft(Expression* left);
 	void SetRight(Expression* right);
 	void UpdateDenotations();
+	void UpdateSimpleDenotations();
 	std::vector<int>* GetInterpretation();
 	void UpdateInterpretation();
 	virtual ~Equality();

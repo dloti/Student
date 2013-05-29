@@ -10,6 +10,9 @@
 PreOps::PreOps(int obj_num) {
 	this->obj_num = obj_num;
 	this->subset_num = (int) pow(2., obj_num);
+	MakeSubsets();
+	Not();
+	Join();
 }
 
 int PreOps::NextMask(int mask[]) {
@@ -46,39 +49,59 @@ void PreOps::MakeSubsets() {
 	int i;
 	for (i = 0; i < obj_num; ++i)
 		mask[i] = 0;
-
-	/* Print the first set */
-	printv(mask);
 	AddSubset(mask);
-
-	/* Print all the others */
 	while (NextMask(mask)) {
-		printv(mask);
 		AddSubset(mask);
 	}
-
-	Join();
 }
 
 void PreOps::Not() {
-
+	std::vector<std::vector<int> >::iterator it;
+	for (unsigned i = 0; i < subsets.size(); ++i) {
+		int k = 0;
+		std::vector<int> tmpInterpretation;
+		for (unsigned j = 0; j < obj_num; ++j) {
+			if (k < subsets[i].size() && j == subsets[i][k]) {
+				k++;
+				continue;
+			} else
+				tmpInterpretation.push_back(j);
+		}
+		it = std::find(subsets.begin(), subsets.end(), tmpInterpretation);
+		tmpInterpretation.clear();
+		nots[i] = (int) (it - subsets.begin());
+	}
 }
 
 void PreOps::Join() {
-	std::vector<int>::iterator it;
-	std::pair<int, int> *p;
+	std::vector<std::vector<int> >::iterator it;
+	std::pair<int, int>* p;
 	for (unsigned i = 0; i < subsets.size(); ++i) {
 		std::vector<int>::iterator first1 = subsets[i].begin();
 		std::vector<int>::iterator last1 = subsets[i].end();
-		for (unsigned j = i + 1; j < subsets[i].size(); ++j) {
+		for (unsigned j = 0; j < subsets.size(); ++j) {
 			std::vector<int> tmpInterpretation;
 			std::vector<int>::iterator first2 = subsets[j].begin();
 			std::vector<int>::iterator last2 = subsets[j].end();
 			std::set_intersection(first1, last1, first2, last2, std::back_inserter(tmpInterpretation));
-			p = new std::pair(i, j);
+			p = new std::pair<int, int>(i, j);
 			it = std::find(subsets.begin(), subsets.end(), tmpInterpretation);
-			joins[*p] = it - subsets.begin();
+			joins[(*p)] = (int) (it - subsets.begin());
+			delete p;
 		}
+	}
+}
+
+void PreOps::TestPrint() {
+	for (unsigned i = 0; i < subsets.size(); ++i) {
+		for (unsigned j = 0; j < subsets[i].size(); ++j) {
+			std::cout << subsets[i][j] << " ";
+		}
+		std::cout << std::endl;
+	}
+	std::map<std::pair<int, int>, int>::iterator itr;
+	for (itr = joins.begin(); itr != joins.end(); ++itr) {
+		std::cout << (itr->first).first << " " << (itr->first).second << "-" << itr->second << std::endl;
 	}
 }
 

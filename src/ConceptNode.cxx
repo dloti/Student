@@ -29,8 +29,7 @@ void ConceptNode::UpdateDenotations(std::vector<Instance> instances, std::vector
 	if (this->predicate.compare("OBJECT") == 0) {
 		std::vector<int> vec;
 		for (unsigned k = 0; k < allObjects->size(); ++k)
-			vec.push_back((*allObjects)[k]);
-			sort(vec.begin(),vec.end());
+			vec.push_back(k);
 		for (unsigned i = 0; i < instances.size(); ++i) {
 			std::vector<State> states = instances[i].GetStates();
 			for (unsigned j = 0; j < states.size(); ++j) {

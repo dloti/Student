@@ -12,9 +12,10 @@ namespace expression {
 class Not :public UnaryOperator {
 	std::vector<int>* allObjects;
 public:
-	Not(Expression* child, std::vector<int>* allObjects);
+	Not(Expression* child, std::vector<int>* allObjects,  PreOps* preops);
 	std::vector<int>* GetInterpretation();
 	void UpdateDenotations();
+	void UpdateSimpleDenotations();
 	void UpdateInterpretation();
 	virtual ~Not();
 };

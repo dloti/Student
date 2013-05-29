@@ -14,6 +14,7 @@ public:
 	TransitiveClosure(Expression* child);
 	std::vector<std::pair<int,int> >* GetRoleInterpretation();
 	void UpdateDenotations();
+	void UpdateSimpleDenotations(){};
 	void UpdateInterpretation();
 	virtual ~TransitiveClosure();
 };

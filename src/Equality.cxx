@@ -7,10 +7,11 @@
 
 #include "Equality.hxx"
 namespace expression {
-Equality::Equality(Expression* left, Expression* right) :
+Equality::Equality(Expression* left, Expression* right,  PreOps* preops) :
 		BinaryOperator('=') {
 	this->SetLeft(left);
 	this->SetRight(right);
+	this->preops = preops;
 	this->UpdateDenotations();
 }
 
@@ -58,6 +59,10 @@ void Equality::UpdateDenotations() {
 		this->denotations.push_back(tmpInterpretation);
 		tmpInterpretation.clear();
 	}
+}
+
+void Equality::UpdateSimpleDenotations(){
+	this->SimplifyDenotations();
 }
 
 void Equality::UpdateInterpretation() {
