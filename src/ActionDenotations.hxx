@@ -14,9 +14,11 @@ class ActionDenotations {
 	std::vector<std::string>* actions;
 	std::vector<std::vector<bool> > actionDenotations;
 	std::vector<std::vector<int> > actionCoverage;
+	int numCoverage;
 public:
 	ActionDenotations(std::vector<Instance>* instances, std::vector<std::string>* actions);
-	std::vector<bool>& operator[](const int nIndex);
+	void SetCovered(int i, int j);
+	std::vector<int>& operator[](const int nIndex);
 };
 
 #endif /* ACTIONDENOTATIONS_HXX_ */

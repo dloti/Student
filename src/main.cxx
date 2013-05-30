@@ -415,18 +415,24 @@ void make_policy() {
 		vector<int>* cDenot = rootConcepts[i]->GetSimpleDenotationVec();
 		if (rootConcepts[i]->GetNonEmptyDenotationNum() == 0)
 			continue;
-		int correct = 0;
 		for (unsigned j = 0; j < actions.size(); ++j) {
+			int correct = 0;
+			vector<pair<int, int> > coVector;
 			bool mistake = false;
 			for (unsigned k = 0; k < cDenot->size(); ++k) {
 				if ((*cDenot)[k] != 0 && !((*aDenot)[j][k])) {
 					mistake = true;
 					break;
 				}
-				if ((*cDenot)[k] != 0 && (*aDenot)[j][k])
+				if ((*cDenot)[k] != 0 && (*aDenot)[j][k] && (*aDenot)[j][k] != 2) {
 					correct++;
+					pair<int, int> p(j, k);
+					coVector.push_back(p);
+				}
 			}
-			if (!mistake) {
+			if (!mistake && correct > 0) {
+				for (int v = 0; v < coVector.size(); ++v)
+					aDenot->SetCovered(coVector[v].first, coVector[v].second);
 				numCovered += correct;
 				Rule r(rootConcepts[i], actions[j]);
 				r.SetCorrect(correct);
