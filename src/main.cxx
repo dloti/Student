@@ -23,6 +23,7 @@
 #include "ValueRestriction.hxx"
 #include "Rule.hxx"
 #include "PreOps.hxx"
+#include "ActionDenotations.hxx"
 
 using namespace std;
 using namespace expression;
@@ -35,10 +36,12 @@ vector<string> primitiveRoles;
 vector<string> allObjects;
 vector<int> allObjectsIdx;
 vector<string> actions;
-vector<vector<bool> > actionDenotations;
+ActionDenotations* aDenot;
 vector<Instance> instances;
 vector<Rule> ruleSet;
-int runCount = 0;
+PreOps* preops;
+int denotationSize(0);
+int runCount(0);
 
 void initialize_concepts() {
 	for (unsigned i = 0; i < allObjects.size(); ++i)
@@ -134,13 +137,13 @@ void combine_concepts() {
 	vector<Expression*> nextLayer = rootConcepts;
 	UnaryOperator* uo;
 	BinaryOperator* bo;
-	PreOps preops(allObjects.size());
 
 	bool hasCandidates = true;
-	cout << "Denotation size: " << rootConcepts[0]->GetDenotationVec().size() << endl;
+	denotationSize = rootConcepts[0]->GetDenotationVec().size();
+	cout << "Denotation size: " << denotationSize << endl;
 
 	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
-		rootConcepts[i]->SetPreops(&preops);
+		rootConcepts[i]->SetPreops(preops);
 		rootConcepts[i]->SimplifyDenotations();
 		vector<bool> signature = rootConcepts[i]->GetSignature();
 		map<vector<bool>, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
@@ -157,25 +160,26 @@ void combine_concepts() {
 		for (roleIt1 = rootRoles.begin(); roleIt1 < rootRoles.end(); ++roleIt1) {
 			if (roleIt == roleIt1)
 				continue;
-			bo = new Equality(*roleIt, *roleIt1, &preops);
+			bo = new Equality(*roleIt, *roleIt1, preops);
 			insert_candidate(bo, &candidates);
 		}
 	}
+
 	while (hasCandidates) {
 		cout << "Concepts: " << rootConcepts.size() << endl;
 		int cnt = 1;
 		for (conceptIt = nextLayer.begin(); conceptIt < nextLayer.end(); ++conceptIt) {
-			uo = new Not(*conceptIt, &allObjectsIdx, &preops);
+			uo = new Not(*conceptIt, &allObjectsIdx, preops);
 			insert_candidate(uo, &candidates);
 			for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
-				bo = new ValueRestriction(*roleIt, *conceptIt, &preops);
+				bo = new ValueRestriction(*roleIt, *conceptIt, preops);
 				insert_candidate(bo, &candidates);
 			}
 
 			for (conceptIt1 = rootConcepts.begin(); conceptIt1 < rootConcepts.end(); ++conceptIt1) {
 				if (conceptIt == conceptIt1)
 					continue;
-				bo = new Join(*conceptIt, *conceptIt1, &preops);
+				bo = new Join(*conceptIt, *conceptIt1, preops);
 				insert_candidate(bo, &candidates);
 
 			}
@@ -183,8 +187,7 @@ void combine_concepts() {
 				cout << "Evaluated: " << cnt << " concepts from current layer!" << endl;
 		}
 
-		for (unsigned i = 0; i < candidates.size(); ++i)
-			rootConcepts.push_back(candidates[i]);
+		rootConcepts.insert(rootConcepts.end(), candidates.begin(), candidates.end());
 		if (candidates.size() == 0)
 			hasCandidates = false;
 		nextLayer = candidates;
@@ -338,13 +341,13 @@ void printout() {
 	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
 		rootConcepts[i]->infix(cout);
 		cout << "-" << rootConcepts[i]->GetNonEmptyDenotationNum() << endl;
-		vector<vector<int> > denotations = rootConcepts[i]->GetDenotationVec();
-		for (unsigned j = 0; j < denotations.size(); ++j) {
-			for (unsigned k = 0; k < denotations[j].size(); ++k) {
-				cout << allObjects[denotations[j][k]] << " ";
-			}
-			cout << endl;
-		}
+//		vector<vector<int> > denotations = rootConcepts[i]->GetDenotationVec();
+//		for (unsigned j = 0; j < denotations.size(); ++j) {
+//			for (unsigned k = 0; k < denotations[j].size(); ++k) {
+//				cout << allObjects[denotations[j][k]] << " ";
+//			}
+//			cout << endl;
+//		}
 	}
 
 	for (unsigned i = 0; i < rootRoles.size(); ++i) {
@@ -360,10 +363,10 @@ void printout() {
 //		}
 	}
 	cout << "\tAction denotations" << endl;
-	for (unsigned i = 0; i < actionDenotations.size(); ++i) {
+	for (unsigned i = 0; i < actions.size(); ++i) {
 		cout << actions[i] << ": ";
-		for (unsigned j = 0; j < actionDenotations[i].size(); ++j) {
-			if (actionDenotations[i][j])
+		for (unsigned j = 0; j < (*aDenot)[i].size(); ++j) {
+			if ((*aDenot)[i][j])
 				cout << '+';
 			else
 				cout << '-';
@@ -407,42 +410,30 @@ void learn_concepts() {
 }
 
 void make_policy() {
-	for (unsigned i = 0; i < actions.size(); ++i) {
-		vector<bool> tmpVec;
-		for (unsigned j = 0; j < instances.size(); ++j) {
-			for (unsigned k = 0; k < instances[j].GetStates().size(); ++k) {
-				if (actions[i].compare(instances[j][k].GetAction()) == 0)
-					tmpVec.push_back(true);
-				else
-					tmpVec.push_back(false);
-			}
-		}
-		actionDenotations.push_back(tmpVec);
-	}
-
-	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
-		vector<vector<int> > cDenot = rootConcepts[i]->GetDenotationVec();
+	int numCovered = 0;
+	for (unsigned i = 0; i < rootConcepts.size() && numCovered < denotationSize; ++i) {
+		vector<int>* cDenot = rootConcepts[i]->GetSimpleDenotationVec();
 		if (rootConcepts[i]->GetNonEmptyDenotationNum() == 0)
 			continue;
 		int correct = 0;
 		for (unsigned j = 0; j < actions.size(); ++j) {
 			bool mistake = false;
-			for (unsigned k = 0; k < cDenot.size(); ++k) {
-				if (cDenot[k].size() > 0 && !(actionDenotations[j][k])) {
+			for (unsigned k = 0; k < cDenot->size(); ++k) {
+				if ((*cDenot)[k] != 0 && !((*aDenot)[j][k])) {
 					mistake = true;
 					break;
 				}
-				if (cDenot[k].size() > 0 && actionDenotations[j][k])
+				if ((*cDenot)[k] != 0 && (*aDenot)[j][k])
 					correct++;
 			}
 			if (!mistake) {
+				numCovered += correct;
 				Rule r(rootConcepts[i], actions[j]);
 				r.SetCorrect(correct);
 				ruleSet.push_back(r);
 			}
 		}
 	}
-	sort(ruleSet.begin(), ruleSet.end());
 }
 
 void write_policy() {
@@ -463,6 +454,8 @@ void write_policy() {
 int main(int argc, char** argv) {
 	get_input();
 	initialize_concepts();
+	preops = new PreOps(allObjects.size());
+	aDenot = new ActionDenotations(&instances, &actions);
 	float t0, tf;
 	t0 = time_used();
 	learn_concepts();
@@ -471,6 +464,7 @@ int main(int argc, char** argv) {
 	report_interval(t0, tf, cout);
 	cout << endl;
 	make_policy();
+	sort(ruleSet.begin(), ruleSet.end());
 	printout();
 	write_policy();
 	cleanup();

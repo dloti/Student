@@ -16,6 +16,7 @@ class State {
 	std::map<std::string, std::vector<int> > conceptInterpretation;
 	std::map<std::string, std::vector<std::pair<int, int> > > roleInterpretation;
 	std::string action;
+	bool covered;
 public:
 	State();
 	virtual ~State();
@@ -49,6 +50,14 @@ public:
 
 	inline void SetAction(std::string a) {
 		action = a;
+	}
+
+	inline void Covered() {
+		covered = true;
+	}
+
+	inline bool IsCovered() {
+		return covered;
 	}
 
 	inline std::string GetAction() {

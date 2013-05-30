@@ -10,6 +10,7 @@
 State::State() {
 	type = 1;
 	number = 0;
+	covered = false;
 }
 
 State::~State() {
