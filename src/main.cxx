@@ -7,7 +7,6 @@
 #include <map>
 #include <vector>
 #include <algorithm>
-#include <bitset>
 #include <stdlib.h>
 #include "time.hxx"
 #include "Instance.hxx"
@@ -29,8 +28,8 @@ namespace mn {
 using namespace std;
 using namespace expression;
 
-map<vector<bool>, vector<Expression*> > candidateDenotMap;
-map<vector<bool>, vector<Expression*> > rootDenotMap;
+map<string, vector<Expression*> > candidateDenotMap;
+map<string, vector<Expression*> > rootDenotMap;
 vector<Expression*> rootConcepts;
 vector<Expression*> rootRoles;
 vector<string> primitiveConcepts;
@@ -88,8 +87,8 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 		delete exp;
 		return;
 	}
-	vector<bool> signature = exp->GetSignature();
-	map<vector<bool>, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
+	string signature = exp->GetSignature();
+	map<string, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
 	if (itr != rootDenotMap.end()) {
 		if (runCount > 1) {
 			delete exp;
@@ -108,7 +107,7 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 		rootDenotMap[signature] = tmp;
 	}
 
-	map<vector<bool>, vector<Expression*> >::iterator it = candidateDenotMap.find(signature);
+	map<string, vector<Expression*> >::iterator it = candidateDenotMap.find(signature);
 	if (it != candidateDenotMap.end()) {
 		if (runCount > 1) {
 			delete exp;
@@ -147,8 +146,8 @@ void combine_concepts() {
 	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
 		rootConcepts[i]->SetPreops(preops);
 		rootConcepts[i]->SimplifyDenotations();
-		vector<bool> signature = rootConcepts[i]->GetSignature();
-		map<vector<bool>, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
+		string signature = rootConcepts[i]->GetSignature();
+		map<string, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
 		if (itr != rootDenotMap.end()) {
 			itr->second.push_back(rootConcepts[i]);
 		} else {

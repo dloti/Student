@@ -61,15 +61,21 @@ public:
 		return this->nonEmptyDenot;
 	}
 
-	inline std::vector<bool> GetSignature() {
-		std::vector<bool> ret;
+	inline std::string GetSignature() {
+		std::string ret;
 		if (simpleDenotations.size() == 0) {
 			for (unsigned i = 0; i < denotations.size(); ++i)
-				ret.push_back(denotations[i].size());
+				if (denotations[i].size())
+					ret += "1";
+				else
+					ret += "0";
 			return ret;
 		}
 		for (unsigned i = 0; i < simpleDenotations.size(); ++i)
-			ret.push_back(simpleDenotations[i]);
+			if (simpleDenotations[i])
+				ret += "1";
+			else
+				ret += "0";
 		return ret;
 	}
 
