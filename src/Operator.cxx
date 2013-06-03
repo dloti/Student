@@ -57,22 +57,6 @@ bool Operator::EqualDenotationVec(Expression* exp) {
 	return true;
 }
 
-bool Operator::EqualSimpleDenotationVec(Expression* exp) {
-	if (exp->GetNonEmptyDenotationNum() != this->nonEmptyDenot)
-		return false;
-
-	this->SimplifyDenotations();
-	exp->SimplifyDenotations();
-
-	std::vector<int>* sdenot = exp->GetSimpleDenotationVec();
-
-	for (unsigned i = 0; i < sdenot->size(); i++) {
-		if (this->simpleDenotations[i] != (*sdenot)[i])
-			return false;
-	}
-	return true;
-}
-
 Operator::~Operator() {
 }
 }

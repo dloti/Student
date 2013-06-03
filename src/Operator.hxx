@@ -20,7 +20,23 @@ public:
 	void ClearInterpretation();
 	std::vector<int>* GetInterpretation();
 	std::vector<std::pair<int, int> >* GetRoleInterpretation();
-	bool EqualSimpleDenotationVec(Expression* exp);
+
+	inline bool EqualSimpleDenotationVec(Expression* exp) {
+		if (exp->GetNonEmptyDenotationNum() != this->nonEmptyDenot)
+			return false;
+
+		this->SimplifyDenotations();
+		exp->SimplifyDenotations();
+
+		std::vector<int>* sdenot = exp->GetSimpleDenotationVec();
+
+		for (unsigned i = 0; i < simpleDenotations.size(); ++i) {
+			if (this->simpleDenotations[i] != (*sdenot)[i])
+				return false;
+		}
+		return true;
+	}
+
 	bool EqualDenotationVec(Expression* exp);
 	virtual void UpdateDenotations()=0;
 	virtual void UpdateSimpleDenotations() = 0;

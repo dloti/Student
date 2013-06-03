@@ -37,9 +37,23 @@ public:
 	virtual std::vector<int>* GetInterpretation() = 0;
 	virtual std::vector<std::pair<int, int> >* GetRoleInterpretation() = 0;
 	virtual std::vector<Expression*> GetChildren() = 0;
-	void SimplifyDenotations();
+	inline void SimplifyDenotations() {
+		if (simpleDenotations.size() > 0)
+			return;
+		std::vector<std::vector<int> >* subsets = preops->GetSubsets();
+		std::vector<std::vector<int> >::iterator it;
+		for (unsigned i = 0; i < this->denotations.size(); ++i) {
+			it = std::find(subsets->begin(), subsets->end(), denotations[i]);
+			if (it == subsets->end())
+				std::cout << "ERR denotation simplifier" << std::endl;
+			//		for (unsigned j = 0; j < denotations[i].size(); ++j)
+			//			std::cout << denotations[i][j] << " ";
+			//		std::cout << std::endl;
+			simpleDenotations.push_back((it - subsets->begin()));
+		}
+	}
 
-	inline void SetPreops(PreOps* preops){
+	inline void SetPreops(PreOps* preops) {
 		this->preops = preops;
 	}
 

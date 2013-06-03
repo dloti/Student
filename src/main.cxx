@@ -25,8 +25,10 @@
 #include "PreOps.hxx"
 #include "ActionDenotations.hxx"
 
+namespace mn {
 using namespace std;
 using namespace expression;
+
 map<vector<bool>, vector<Expression*> > candidateDenotMap;
 map<vector<bool>, vector<Expression*> > rootDenotMap;
 vector<Expression*> rootConcepts;
@@ -456,6 +458,8 @@ void write_policy() {
 	fout << endl;
 
 }
+}
+using namespace mn;
 
 int main(int argc, char** argv) {
 	get_input();
@@ -476,3 +480,4 @@ int main(int argc, char** argv) {
 	cleanup();
 	return 0;
 }
+
