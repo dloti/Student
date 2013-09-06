@@ -90,6 +90,7 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 	string signature = exp->GetSignature();
 	map<string, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
 	if (itr != rootDenotMap.end()) {
+		//TODO binary check
 		if (runCount > 1) {
 			delete exp;
 			return;
@@ -109,6 +110,7 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 
 	map<string, vector<Expression*> >::iterator it = candidateDenotMap.find(signature);
 	if (it != candidateDenotMap.end()) {
+		//TODO binary check
 		if (runCount > 1) {
 			delete exp;
 			return;
@@ -177,13 +179,14 @@ void combine_concepts() {
 				insert_candidate(bo, &candidates);
 			}
 
-			for (conceptIt1 = rootConcepts.begin(); conceptIt1 < rootConcepts.end(); ++conceptIt1) {
-				if (conceptIt == conceptIt1)
-					continue;
-				bo = new Join(*conceptIt, *conceptIt1, preops);
-				insert_candidate(bo, &candidates);
-
-			}
+//TODO Joins excluded
+//			for (conceptIt1 = rootConcepts.begin(); conceptIt1 < rootConcepts.end(); ++conceptIt1) {
+//				if (conceptIt == conceptIt1)
+//					continue;
+//				bo = new Join(*conceptIt, *conceptIt1, preops);
+//				insert_candidate(bo, &candidates);
+//
+//			}
 			if (++cnt % 10000 == 0)
 				cout << "Evaluated: " << cnt << " concepts from current layer!" << endl;
 		}
