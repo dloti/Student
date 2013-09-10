@@ -87,46 +87,45 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 		delete exp;
 		return;
 	}
-	string signature = exp->GetSignature();
-	map<string, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
-	if (itr != rootDenotMap.end()) {
-		//TODO binary check
-		if (runCount > 1) {
-			delete exp;
-			return;
-		}
-		for (unsigned i = 0; i < itr->second.size(); ++i) {
-			if (exp->EqualSimpleDenotationVec(itr->second[i])) {
-				delete exp;
-				return;
-			}
-		}
-		rootDenotMap[signature].push_back(exp);
-	} else {
-		vector<Expression*> tmp;
-		tmp.push_back(exp);
-		rootDenotMap[signature] = tmp;
-	}
 
-	map<string, vector<Expression*> >::iterator it = candidateDenotMap.find(signature);
-	if (it != candidateDenotMap.end()) {
-		//TODO binary check
-		if (runCount > 1) {
-			delete exp;
-			return;
-		}
-		for (unsigned i = 0; i < it->second.size(); ++i) {
-			if (exp->EqualSimpleDenotationVec(it->second[i])) {
-				delete exp;
-				return;
-			}
-		}
-		candidateDenotMap[signature].push_back(exp);
-	} else {
-		vector<Expression*> tmp;
-		tmp.push_back(exp);
-		candidateDenotMap[signature] = tmp;
-	}
+//	string signature = exp->GetSignature();
+//	map<string, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
+//	if (itr != rootDenotMap.end()) {
+//		if (runCount > 1) {
+//			delete exp;
+//			return;
+//		}
+//		for (unsigned i = 0; i < itr->second.size(); ++i) {
+//			if (exp->EqualSimpleDenotationVec(itr->second[i])) {
+//				delete exp;
+//				return;
+//			}
+//		}
+//		rootDenotMap[signature].push_back(exp);
+//	} else {
+//		vector<Expression*> tmp;
+//		tmp.push_back(exp);
+//		rootDenotMap[signature] = tmp;
+//	}
+//
+//	map<string, vector<Expression*> >::iterator it = candidateDenotMap.find(signature);
+//	if (it != candidateDenotMap.end()) {
+//		if (runCount > 1) {
+//			delete exp;
+//			return;
+//		}
+//		for (unsigned i = 0; i < it->second.size(); ++i) {
+//			if (exp->EqualSimpleDenotationVec(it->second[i])) {
+//				delete exp;
+//				return;
+//			}
+//		}
+//		candidateDenotMap[signature].push_back(exp);
+//	} else {
+//		vector<Expression*> tmp;
+//		tmp.push_back(exp);
+//		candidateDenotMap[signature] = tmp;
+//	}
 
 	exp->SimplifyDenotations();
 	candidates->push_back(exp);
