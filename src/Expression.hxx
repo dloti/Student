@@ -21,9 +21,11 @@ namespace expression {
 class Expression {
 protected:
 	PreOps* preops;
-	int level;
 	bool isRole;
 	int nonEmptyDenot;
+	int hitSets;
+	bool isHitting;
+	std::vector<int> hitSetIndexes;
 	std::vector<int> simpleDenotations;
 	std::vector<std::vector<int> > denotations;
 	std::vector<std::vector<std::pair<int, int> > > denotationsRole;
@@ -97,12 +99,30 @@ public:
 	inline void SetRole(bool isRole) {
 		this->isRole = isRole;
 	}
-	inline bool GetLevel() {
-		return level;
+	inline void IncHits() {
+		hitSets++;
 	}
-	inline void SetLevel(int level) {
-		this->level = level;
+
+	inline void AddHit(int index) {
+		hitSetIndexes.push_back(index);
 	}
+
+	inline int GetHits() {
+		return hitSets;
+	}
+
+	inline std::vector<int> GetHitSetIndexes() {
+		return hitSetIndexes;
+	}
+
+	inline bool IsHitting() {
+		return isHitting;
+	}
+
+	inline void SetIsHitting(bool isHitting) {
+		this->isHitting = isHitting;
+	}
+
 	virtual ~Expression();
 };
 }

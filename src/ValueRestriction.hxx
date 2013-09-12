@@ -15,8 +15,8 @@ namespace expression {
 class ValueRestriction: public BinaryOperator {
 public:
 	ValueRestriction(Expression* left, Expression* right,  PreOps* preops);
-	void SetLeft(Expression* left);
-	void SetRight(Expression* right);
+	//void SetLeft(Expression* left);
+	//void SetRight(Expression* right);
 	void UpdateDenotations();
 	void UpdateSimpleDenotations();
 	std::vector<int>* GetInterpretation();

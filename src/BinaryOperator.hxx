@@ -46,8 +46,8 @@ public:
 	void UpdateInterpretation();
 	std::vector<int>* GetInterpretation() {
 		return new std::vector<int>();
-	}
-	;
+	};
+
 	std::vector<Expression*> GetChildren();
 	virtual ~BinaryOperator();
 };

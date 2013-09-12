@@ -99,14 +99,6 @@ void Equality::UpdateInterpretation() {
 	std::sort(this->interpretation.begin(), this->interpretation.end());
 }
 
-void Equality::SetLeft(Expression* left) {
-	this->left = left;
-}
-
-void Equality::SetRight(Expression* right) {
-	this->right = right;
-}
-
 Equality::~Equality() {
 	// TODO Auto-generated destructor stub
 }

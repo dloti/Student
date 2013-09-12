@@ -13,11 +13,14 @@ namespace expression {
 class Operator: public Expression {
 protected:
 	char op;
+	int level;
 	std::vector<int> interpretation;
 	std::vector<std::pair<int, int> > roleInterpretation;
 public:
 	Operator(char op);
+	Operator(char op, int lvl);
 	void ClearInterpretation();
+
 	std::vector<int>* GetInterpretation();
 	std::vector<std::pair<int, int> >* GetRoleInterpretation();
 
@@ -40,7 +43,13 @@ public:
 	bool EqualDenotationVec(Expression* exp);
 	virtual void UpdateDenotations()=0;
 	virtual void UpdateSimpleDenotations() = 0;
+	inline int GetLevel() {
+		return level;
+	}
 
+	inline void SetLevel(int lvl) {
+		this->level = lvl;
+	}
 	virtual ~Operator();
 };
 }

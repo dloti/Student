@@ -15,7 +15,7 @@ ActionDenotations::ActionDenotations(std::vector<Instance>* instances, std::vect
 		std::vector<bool> tmpVec;
 		std::vector<int> coverageVec;
 		for (unsigned j = 0; j < instances->size(); ++j) {
-			for (unsigned k = 0; k < (*instances)[j].GetStates().size(); ++k) {
+			for (unsigned k = 0; k < (*instances)[j].GetStates()->size(); ++k) {
 				if ((*actions)[i].compare((*instances)[j][k].GetAction()) == 0){
 					tmpVec.push_back(true);
 					coverageVec.push_back(1);

@@ -25,8 +25,8 @@ public:
 		s.SetGoal();
 		goal = s;
 	}
-	inline std::vector<State> GetStates() {
-		return states;
+	inline std::vector<State>* GetStates()  {
+		return &states;
 	}
 	inline State GetGoal() {
 		return goal;

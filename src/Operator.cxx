@@ -10,6 +10,7 @@ namespace expression {
 Operator::Operator(char op) :
 		Expression() {
 	this->op = op;
+	this->level = 0;
 }
 
 void Operator::ClearInterpretation() {

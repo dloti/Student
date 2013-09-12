@@ -16,12 +16,12 @@ RoleNode::RoleNode(std::string predicate) {
 
 void RoleNode::UpdateDenotations(std::vector<Instance> instances, std::vector<int>* allObjects) {
 	for (unsigned i = 0; i < instances.size(); ++i) {
-		std::vector<State> states = instances[i].GetStates();
-		for (unsigned j = 0; j < states.size(); ++j) {
+		std::vector<State>* states = instances[i].GetStates();
+		for (unsigned j = 0; j < states->size(); ++j) {
 			if (this->goal)
 				this->denotationsRole.push_back(instances[i].GetGoal().GetRoleInterpretation(this->predicate));
 			else
-				this->denotationsRole.push_back(states[j].GetRoleInterpretation(this->predicate));
+				this->denotationsRole.push_back((*states)[j].GetRoleInterpretation(this->predicate));
 		}
 	}
 }

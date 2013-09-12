@@ -30,6 +30,11 @@ using namespace expression;
 
 map<string, vector<Expression*> > candidateDenotMap;
 map<string, vector<Expression*> > rootDenotMap;
+
+vector<vector<Expression*> > conceptSets;
+vector<bool> setsTouched;
+vector<Expression*> minHitSet;
+
 vector<Expression*> rootConcepts;
 vector<Expression*> rootRoles;
 vector<string> primitiveConcepts;
@@ -39,10 +44,74 @@ vector<int> allObjectsIdx;
 vector<string> actions;
 ActionDenotations* aDenot;
 vector<Instance> instances;
+vector<State> allStates;
 vector<Rule> ruleSet;
 PreOps* preops;
 int denotationSize(0);
-int runCount(0);
+int runCount(1);
+
+void find_min_hitset() {
+	int remainingSets = setsTouched.size();
+
+	while (remainingSets > 0) {
+		for (int i = 0; i < setsTouched.size(); ++i) {
+			if (!setsTouched[i]) {
+				for (int k = 0; k < conceptSets[i].size(); ++k) {
+					conceptSets[i][k]->SetIsHitting(true);
+					minHitSet.push_back(conceptSets[i][k]);
+					vector<int> hitSetIndexes = conceptSets[i][k]->GetHitSetIndexes();
+
+					for (int j = 0; j < hitSetIndexes.size(); ++j) {
+						if (!setsTouched[hitSetIndexes[j]])
+							--remainingSets;
+						setsTouched[hitSetIndexes[j]] = true;
+					}
+				}
+			}
+		}
+
+		cout << "Minimum hitset found with" << minHitSet.size() << " members inside." << endl;
+
+	}
+}
+void get_all_states() {
+	for (int i = 0; i < instances.size(); ++i) {
+		vector<State>* iStates = instances[i].GetStates();
+		for (int j = 0; j < iStates->size(); ++j) {
+			allStates.push_back((*iStates)[j]);
+		}
+	}
+}
+
+void generate_concept_sets() {
+	get_all_states();
+
+	cout << endl;
+
+	for (int i = 0; i < allStates.size() - 1; ++i) {
+		for (int j = i + 1; j < allStates.size(); ++j) {
+			if (allStates[i].GetAction().compare(allStates[j].GetAction()) != 0) {
+				conceptSets.push_back(vector<Expression*>());
+				for (int k = 0; k < rootConcepts.size(); ++k) {
+					if ((*rootConcepts[k]->GetSimpleDenotationVec())[i]
+							!= (*rootConcepts[k]->GetSimpleDenotationVec())[j]) {
+						conceptSets[conceptSets.size() - 1].push_back(rootConcepts[k]);
+						rootConcepts[k]->IncHits();
+						rootConcepts[k]->AddHit(conceptSets.size() - 1);
+					}
+				}
+				cout << "States: " << i << ", " << j << " : " << allStates[i].GetAction() << "-"
+						<< allStates[j].GetAction() << " size: " << conceptSets[conceptSets.size() - 1].size() << endl;
+			}
+		}
+	}
+
+	for (int i = 0; i < conceptSets.size(); ++i)
+		setsTouched.push_back(false);
+
+	find_min_hitset();
+
+}
 
 void initialize_concepts() {
 	for (unsigned i = 0; i < allObjects.size(); ++i)
@@ -88,44 +157,44 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 		return;
 	}
 
-//	string signature = exp->GetSignature();
-//	map<string, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
-//	if (itr != rootDenotMap.end()) {
-//		if (runCount > 1) {
+	string signature = exp->GetSignature();
+	map<string, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
+	if (itr != rootDenotMap.end()) {
+//		if (runCount > -1) {
 //			delete exp;
 //			return;
 //		}
-//		for (unsigned i = 0; i < itr->second.size(); ++i) {
-//			if (exp->EqualSimpleDenotationVec(itr->second[i])) {
-//				delete exp;
-//				return;
-//			}
-//		}
-//		rootDenotMap[signature].push_back(exp);
-//	} else {
-//		vector<Expression*> tmp;
-//		tmp.push_back(exp);
-//		rootDenotMap[signature] = tmp;
-//	}
-//
-//	map<string, vector<Expression*> >::iterator it = candidateDenotMap.find(signature);
-//	if (it != candidateDenotMap.end()) {
-//		if (runCount > 1) {
+		for (unsigned i = 0; i < itr->second.size(); ++i) {
+			if (exp->EqualSimpleDenotationVec(itr->second[i])) {
+				delete exp;
+				return;
+			}
+		}
+		rootDenotMap[signature].push_back(exp);
+	} else {
+		vector<Expression*> tmp;
+		tmp.push_back(exp);
+		rootDenotMap[signature] = tmp;
+	}
+
+	map<string, vector<Expression*> >::iterator it = candidateDenotMap.find(signature);
+	if (it != candidateDenotMap.end()) {
+//		if (runCount > -1) {
 //			delete exp;
 //			return;
 //		}
-//		for (unsigned i = 0; i < it->second.size(); ++i) {
-//			if (exp->EqualSimpleDenotationVec(it->second[i])) {
-//				delete exp;
-//				return;
-//			}
-//		}
-//		candidateDenotMap[signature].push_back(exp);
-//	} else {
-//		vector<Expression*> tmp;
-//		tmp.push_back(exp);
-//		candidateDenotMap[signature] = tmp;
-//	}
+		for (unsigned i = 0; i < it->second.size(); ++i) {
+			if (exp->EqualSimpleDenotationVec(it->second[i])) {
+				delete exp;
+				return;
+			}
+		}
+		candidateDenotMap[signature].push_back(exp);
+	} else {
+		vector<Expression*> tmp;
+		tmp.push_back(exp);
+		candidateDenotMap[signature] = tmp;
+	}
 
 	exp->SimplifyDenotations();
 	candidates->push_back(exp);
@@ -163,6 +232,7 @@ void combine_concepts() {
 			if (roleIt == roleIt1)
 				continue;
 			bo = new Equality(*roleIt, *roleIt1, preops);
+			bo->SetLevel(1);
 			insert_candidate(bo, &candidates);
 		}
 	}
@@ -172,9 +242,11 @@ void combine_concepts() {
 		int cnt = 1;
 		for (conceptIt = nextLayer.begin(); conceptIt < nextLayer.end(); ++conceptIt) {
 			uo = new Not(*conceptIt, &allObjectsIdx, preops);
+			uo->SetLevel(runCount);
 			insert_candidate(uo, &candidates);
 			for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
 				bo = new ValueRestriction(*roleIt, *conceptIt, preops);
+				bo->SetLevel(runCount);
 				insert_candidate(bo, &candidates);
 			}
 
@@ -343,7 +415,8 @@ void printout() {
 
 	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
 		rootConcepts[i]->infix(cout);
-		cout << "-" << rootConcepts[i]->GetNonEmptyDenotationNum() << endl;
+		cout << "-" << rootConcepts[i]->GetNonEmptyDenotationNum() << "-" << ((Operator*) rootConcepts[i])->GetLevel()
+				<< endl;
 //		vector<vector<int> > denotations = rootConcepts[i]->GetDenotationVec();
 //		for (unsigned j = 0; j < denotations.size(); ++j) {
 //			for (unsigned k = 0; k < denotations[j].size(); ++k) {
@@ -478,6 +551,7 @@ int main(int argc, char** argv) {
 	sort(ruleSet.begin(), ruleSet.end());
 	printout();
 	write_policy();
+	generate_concept_sets();
 	cleanup();
 	return 0;
 }

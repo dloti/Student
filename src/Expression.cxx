@@ -9,8 +9,9 @@
 
 namespace expression {
 Expression::Expression() {
-	this->level = 0;
 	this->isRole = false;
+	hitSets = 0;
+	isHitting = false;
 }
 
 Expression::~Expression() {

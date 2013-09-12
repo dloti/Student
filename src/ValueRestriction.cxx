@@ -17,12 +17,12 @@ ValueRestriction::ValueRestriction(Expression* left, Expression* right, PreOps* 
 	this->UpdateSimpleDenotations();
 }
 
-void ValueRestriction::SetLeft(Expression* left) {
-	this->left = left;
-}
-void ValueRestriction::SetRight(Expression* right) {
-	this->right = right;
-}
+//void ValueRestriction::SetLeft(Expression* left) {
+//	this->left = left;
+//}
+//void ValueRestriction::SetRight(Expression* right) {
+//	this->right = right;
+//}
 std::vector<int>* ValueRestriction::GetInterpretation() {
 	//this->UpdateInterpretation();
 	return &(this->interpretation);
