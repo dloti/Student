@@ -50,9 +50,51 @@ PreOps* preops;
 int denotationSize(0);
 int runCount(1);
 
+void print_min_hitset() {
+	cout << endl;
+	int weight = 0;
+	for (int i = 0; i < minHitSet.size(); ++i) {
+		minHitSet[i]->infix(cout);
+		weight += ((Operator*) minHitSet[i])->GetLevel();
+		cout << " hits " << minHitSet[i]->GetHits() << endl;
+	}
+	cout << "Total weight: " << weight << endl;
+	cout << "Number of sets: " << conceptSets.size();
+}
+
+bool moreHits(Expression* x, Expression* y) {
+	return x->GetHits() > y->GetHits();
+}
+
+void find_min_hitset_greedy() {
+	int remainingSets = setsTouched.size();
+	sort(rootConcepts.begin(), rootConcepts.end(), moreHits);
+	int conc = 0;
+	while (remainingSets > 0) {
+		if (conc >= rootConcepts.size()) {
+			cout << " min hitting set not possible!!!!";
+			return;
+		}
+		if (rootConcepts[conc]->IsHitting())
+			continue;
+		rootConcepts[conc]->SetIsHitting(true);
+		minHitSet.push_back(rootConcepts[conc]);
+		vector<int> hitSetIndexes = rootConcepts[conc]->GetHitSetIndexes();
+
+		for (int j = 0; j < hitSetIndexes.size(); ++j) {
+			if (!setsTouched[hitSetIndexes[j]])
+				--remainingSets;
+			setsTouched[hitSetIndexes[j]] = true;
+		}
+		conc++;
+	}
+
+	cout << "Minimum hitset found with " << minHitSet.size() << " members inside." << endl;
+
+}
+
 void find_min_hitset() {
 	int remainingSets = setsTouched.size();
-
 	while (remainingSets > 0) {
 		for (int i = 0; i < setsTouched.size(); ++i) {
 			if (!setsTouched[i]) {
@@ -109,8 +151,8 @@ void generate_concept_sets() {
 	for (int i = 0; i < conceptSets.size(); ++i)
 		setsTouched.push_back(false);
 
-	find_min_hitset();
-
+	find_min_hitset_greedy();
+	print_min_hitset();
 }
 
 void initialize_concepts() {
@@ -543,15 +585,16 @@ int main(int argc, char** argv) {
 	float t0, tf;
 	t0 = time_used();
 	learn_concepts();
+
+	//make_policy();
+	//sort(ruleSet.begin(), ruleSet.end());
+	//printout();
+	//write_policy();
+	generate_concept_sets();
 	tf = time_used();
-	cout << "Learning time: ";
+	cout << endl << "Total time: ";
 	report_interval(t0, tf, cout);
 	cout << endl;
-	make_policy();
-	sort(ruleSet.begin(), ruleSet.end());
-	printout();
-	write_policy();
-	generate_concept_sets();
 	cleanup();
 	return 0;
 }
