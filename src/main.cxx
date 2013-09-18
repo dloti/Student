@@ -67,7 +67,10 @@ bool moreHits(Expression* x, Expression* y) {
 }
 
 void find_min_hitset_greedy() {
-	int remainingSets = setsTouched.size();
+	int remainingSets = conceptSets.size();
+	for (int i = 0; i < conceptSets.size(); ++i)
+		if (conceptSets[i].size() == 0)
+			--remainingSets;
 	sort(rootConcepts.begin(), rootConcepts.end(), moreHits);
 	int conc = 0;
 	while (remainingSets > 0) {
@@ -529,30 +532,31 @@ void learn_concepts() {
 
 void make_policy() {
 	int numCovered = 0;
-	for (unsigned i = 0; i < rootConcepts.size() && numCovered < denotationSize; ++i) {
-		vector<int>* cDenot = rootConcepts[i]->GetSimpleDenotationVec();
-		if (rootConcepts[i]->GetNonEmptyDenotationNum() == 0)
+	for (unsigned i = 0; i < minHitSet.size() && numCovered < denotationSize; ++i) {
+		vector<int>* cDenot = minHitSet[i]->GetSimpleDenotationVec();
+		if (minHitSet[i]->GetNonEmptyDenotationNum() == 0)
 			continue;
 		for (unsigned j = 0; j < actions.size(); ++j) {
 			int correct = 0;
-			vector<pair<int, int> > coVector;
 			bool mistake = false;
+			//vector<pair<int, int> > coVector;
+
 			for (unsigned k = 0; k < cDenot->size(); ++k) {
-				if ((*cDenot)[k] != 0 && !((*aDenot)[j][k])) {
-					mistake = true;
-					break;
-				}
+//				if ((*cDenot)[k] != 0 && !((*aDenot)[j][k])) {
+//					mistake = true;
+//					break;
+//				}
 				if ((*cDenot)[k] != 0 && (*aDenot)[j][k] && (*aDenot)[j][k] != 2) {
 					correct++;
-					pair<int, int> p(j, k);
-					coVector.push_back(p);
+//					pair<int, int> p(j, k);
+//					coVector.push_back(p);
 				}
 			}
 			if (!mistake && correct > 0) {
-				for (int v = 0; v < coVector.size(); ++v)
-					aDenot->SetCovered(coVector[v].first, coVector[v].second);
-				numCovered += correct;
-				Rule r(rootConcepts[i], actions[j]);
+//				for (int v = 0; v < coVector.size(); ++v)
+//					aDenot->SetCovered(coVector[v].first, coVector[v].second);
+				//numCovered += correct;
+				Rule r(minHitSet[i], actions[j]);
 				r.SetCorrect(correct);
 				ruleSet.push_back(r);
 			}
@@ -585,12 +589,11 @@ int main(int argc, char** argv) {
 	float t0, tf;
 	t0 = time_used();
 	learn_concepts();
-
-	//make_policy();
-	//sort(ruleSet.begin(), ruleSet.end());
-	//printout();
-	//write_policy();
 	generate_concept_sets();
+	make_policy();
+	sort(ruleSet.begin(), ruleSet.end());
+	printout();
+	write_policy();
 	tf = time_used();
 	cout << endl << "Total time: ";
 	report_interval(t0, tf, cout);
