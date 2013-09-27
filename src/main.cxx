@@ -35,6 +35,8 @@ vector<vector<Expression*> > conceptSets;
 vector<int> setsTouched;
 vector<Expression*> minHitSet;
 vector<Expression*> candidateHitSet;
+vector<Expression*> features;
+vector<vector<int> > subsets;
 
 vector<Expression*> rootConcepts;
 vector<Expression*> rootRoles;
@@ -54,7 +56,7 @@ int runCount(1);
 void print_min_hitset() {
 	cout << endl;
 	int weight = 0;
-	for (int i = 0; i < minHitSet.size(); ++i) {
+	for (unsigned i = 0; i < minHitSet.size(); ++i) {
 		minHitSet[i]->infix(cout);
 		weight += ((Operator*) minHitSet[i])->GetLevel();
 		cout << " hits " << minHitSet[i]->GetHits() << endl;
@@ -73,7 +75,7 @@ double uniform_deviate(int seed) {
 int hit_sets(Expression* concept) {
 	int num_hit = 0;
 	vector<int> hitSetIndexes = concept->GetHitSetIndexes();
-	for (int j = 0; j < hitSetIndexes.size(); ++j) {
+	for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
 		if (!setsTouched[hitSetIndexes[j]])
 			num_hit++;
 		setsTouched[hitSetIndexes[j]] += 1;
@@ -83,7 +85,7 @@ int hit_sets(Expression* concept) {
 
 void unhit_sets(Expression* concept) {
 	vector<int> hitSetIndexes = concept->GetHitSetIndexes();
-	for (int j = 0; j < hitSetIndexes.size(); ++j) {
+	for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
 		if (!setsTouched[hitSetIndexes[j]])
 			cout << "ERR set not touched";
 		setsTouched[hitSetIndexes[j]] -= 1;
@@ -93,7 +95,7 @@ void unhit_sets(Expression* concept) {
 
 void find_min_hitset_greedy() {
 	int remainingSets = conceptSets.size();
-	for (int i = 0; i < conceptSets.size(); ++i)
+	for (unsigned i = 0; i < conceptSets.size(); ++i)
 		if (conceptSets[i].size() == 0)
 			--remainingSets;
 	sort(rootConcepts.begin(), rootConcepts.end(), moreHits);
@@ -116,9 +118,9 @@ void init_min_hitting_set() {
 	int remainingSets = conceptSets.size();
 	vector<int> st;
 	vector<int> concept_idx;
-	for (int i = 0; i < conceptSets.size(); ++i)
+	for (unsigned i = 0; i < conceptSets.size(); ++i)
 		st.push_back(0);
-	for (int i = 0; i < conceptSets.size(); ++i)
+	for (unsigned i = 0; i < conceptSets.size(); ++i)
 		if (conceptSets[i].size() == 0)
 			--remainingSets;
 	int rnd = 0;
@@ -126,11 +128,13 @@ void init_min_hitting_set() {
 		rnd = rand() % rootConcepts.size();
 		if (find(concept_idx.begin(), concept_idx.end(), rnd) != concept_idx.end())
 			continue;
+		if(rootConcepts[rnd]->GetHits()==0)
+			continue;
 
 		concept_idx.push_back(rnd);
 		candidateHitSet.push_back(rootConcepts[rnd]);
 		vector<int> hitSetIndexes = rootConcepts[rnd]->GetHitSetIndexes();
-		for (int j = 0; j < hitSetIndexes.size(); ++j) {
+		for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
 			if (!st[hitSetIndexes[j]])
 				--remainingSets;
 			st[hitSetIndexes[j]] += 1;
@@ -140,18 +144,19 @@ void init_min_hitting_set() {
 
 void iterated() {
 	int distance(0);
-	for (int i = 0; i < 1000; ++i) {
+	cout << endl << " Random walks:";
+	for (int i = 0; i < 10000; ++i) {
 		init_min_hitting_set();
 		if (i == 0) {
-			for (int j = 0; j < candidateHitSet.size(); ++j)
+			for (unsigned j = 0; j < candidateHitSet.size(); ++j)
 				minHitSet.push_back(candidateHitSet[j]);
-
 		}
 		distance = candidateHitSet.size() - minHitSet.size();
 		if (distance < 0) {
 			minHitSet.clear();
-			for (int i = 0; i < candidateHitSet.size(); ++i)
+			for (unsigned i = 0; i < candidateHitSet.size(); ++i)
 				minHitSet.push_back(candidateHitSet[i]);
+			cout << minHitSet.size() << " ";
 		}
 		candidateHitSet.clear();
 	}
@@ -161,9 +166,9 @@ void annealGetNext() {
 	int remainingSets = conceptSets.size();
 	vector<int> st;
 	vector<int> concept_idx;
-	for (int i = 0; i < conceptSets.size(); ++i)
+	for (unsigned i = 0; i < conceptSets.size(); ++i)
 		st.push_back(0);
-	for (int i = 0; i < conceptSets.size(); ++i)
+	for (unsigned i = 0; i < conceptSets.size(); ++i)
 		if (conceptSets[i].size() == 0)
 			--remainingSets;
 
@@ -176,9 +181,9 @@ void annealGetNext() {
 		candidateHitSet[rnd]->SetIsHitting(false);
 	}
 
-	for (int i = 0; i < candidateHitSet.size(); ++i) {
+	for (unsigned i = 0; i < candidateHitSet.size(); ++i) {
 		vector<int> hitSetIndexes = candidateHitSet[i]->GetHitSetIndexes();
-		for (int j = 0; j < hitSetIndexes.size(); ++j) {
+		for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
 			if (!st[hitSetIndexes[j]])
 				--remainingSets;
 			st[hitSetIndexes[j]] += 1;
@@ -193,7 +198,7 @@ void annealGetNext() {
 		concept_idx.push_back(rnd);
 		candidateHitSet.push_back(rootConcepts[rnd]);
 		vector<int> hitSetIndexes = rootConcepts[rnd]->GetHitSetIndexes();
-		for (int j = 0; j < hitSetIndexes.size(); ++j) {
+		for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
 			if (!st[hitSetIndexes[j]])
 				--remainingSets;
 			st[hitSetIndexes[j]] += 1;
@@ -208,7 +213,7 @@ void simulated_annealing() {
 	double epsilon = 0.001;
 	double delta;
 	init_min_hitting_set();
-	for (int i = 0; i < candidateHitSet.size(); ++i)
+	for (unsigned i = 0; i < candidateHitSet.size(); ++i)
 		minHitSet.push_back(candidateHitSet[i]);
 	int cost = minHitSet.size();
 
@@ -217,7 +222,7 @@ void simulated_annealing() {
 		delta = candidateHitSet.size() - cost;
 		if (delta < 0) {
 			minHitSet.clear();
-			for (int i = 0; i < candidateHitSet.size(); ++i)
+			for (unsigned i = 0; i < candidateHitSet.size(); ++i)
 				minHitSet.push_back(candidateHitSet[i]);
 			cost += delta;
 		} else {
@@ -225,12 +230,12 @@ void simulated_annealing() {
 			double ex = exp(-delta / temperature);
 			if (ex > proba) {
 				minHitSet.clear();
-				for (int i = 0; i < candidateHitSet.size(); ++i)
+				for (unsigned i = 0; i < candidateHitSet.size(); ++i)
 					minHitSet.push_back(candidateHitSet[i]);
 				cost += delta;
 			} else {
 				candidateHitSet.clear();
-				for (int i = 0; i < minHitSet.size(); ++i)
+				for (unsigned i = 0; i < minHitSet.size(); ++i)
 					candidateHitSet.push_back(minHitSet[i]);
 			}
 		}
@@ -241,14 +246,14 @@ void simulated_annealing() {
 void find_min_hitset() {
 	int remainingSets = setsTouched.size();
 	while (remainingSets > 0) {
-		for (int i = 0; i < setsTouched.size(); ++i) {
+		for (unsigned i = 0; i < setsTouched.size(); ++i) {
 			if (!setsTouched[i]) {
-				for (int k = 0; k < conceptSets[i].size(); ++k) {
+				for (unsigned k = 0; k < conceptSets[i].size(); ++k) {
 					conceptSets[i][k]->SetIsHitting(true);
 					minHitSet.push_back(conceptSets[i][k]);
 					vector<int> hitSetIndexes = conceptSets[i][k]->GetHitSetIndexes();
 
-					for (int j = 0; j < hitSetIndexes.size(); ++j) {
+					for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
 						if (!setsTouched[hitSetIndexes[j]])
 							--remainingSets;
 						setsTouched[hitSetIndexes[j]] = true;
@@ -259,9 +264,9 @@ void find_min_hitset() {
 	}
 }
 void get_all_states() {
-	for (int i = 0; i < instances.size(); ++i) {
+	for (unsigned i = 0; i < instances.size(); ++i) {
 		vector<State>* iStates = instances[i].GetStates();
-		for (int j = 0; j < iStates->size(); ++j) {
+		for (unsigned j = 0; j < iStates->size(); ++j) {
 			allStates.push_back((*iStates)[j]);
 		}
 	}
@@ -272,13 +277,13 @@ void generate_concept_sets() {
 	get_all_states();
 	cout << endl;
 
-	for (int i = 0; i < allStates.size() - 1; ++i) {
-		for (int j = i + 1; j < allStates.size(); ++j) {
+	for (unsigned i = 0; i < allStates.size() - 1; ++i) {
+		for (unsigned j = i + 1; j < allStates.size(); ++j) {
 			if (allStates[i].GetAction().compare(allStates[j].GetAction()) != 0) {
 				conceptSets.push_back(vector<Expression*>());
-				for (int k = 0; k < rootConcepts.size(); ++k) {
-					if ((*rootConcepts[k]->GetSimpleDenotationVec())[i]
-							!= (*rootConcepts[k]->GetSimpleDenotationVec())[j]) {
+				for (unsigned k = 0; k < rootConcepts.size(); ++k) {
+					rootConcepts[k]->SimplifyDenotations();
+					if (rootConcepts[k]->GetSignature()[i] != rootConcepts[k]->GetSignature()[j]) {
 						conceptSets[conceptSets.size() - 1].push_back(rootConcepts[k]);
 						rootConcepts[k]->IncHits();
 						rootConcepts[k]->AddHit(conceptSets.size() - 1);
@@ -290,12 +295,12 @@ void generate_concept_sets() {
 		}
 	}
 
-	for (int i = 0; i < conceptSets.size(); ++i)
+	for (unsigned i = 0; i < conceptSets.size(); ++i)
 		setsTouched.push_back(0);
 
 	//find_min_hitset_greedy();
-	//iterated();
-	simulated_annealing();
+	iterated();
+	//simulated_annealing();
 	cout << "Minimum hitset with " << minHitSet.size() << " members inside." << endl;
 	print_min_hitset();
 }
@@ -625,17 +630,17 @@ void printout() {
 //			cout << endl;
 //		}
 //	}
-//	cout << "\tAction denotations" << endl;
-//	for (unsigned i = 0; i < actions.size(); ++i) {
-//		cout << actions[i] << ": ";
-//		for (unsigned j = 0; j < (*aDenot)[i].size(); ++j) {
-//			if ((*aDenot)[i][j])
-//				cout << '+';
-//			else
-//				cout << '-';
-//		}
-//		cout << endl;
-//	}
+	cout << "\tAction denotations" << endl;
+	for (unsigned i = 0; i < actions.size(); ++i) {
+		cout << actions[i] << ": ";
+		for (unsigned j = 0; j < (*aDenot)[i].size(); ++j) {
+			if ((*aDenot)[i][j])
+				cout << '+';
+			else
+				cout << '-';
+		}
+		cout << endl;
+	}
 
 	cout << "\tRuleset" << endl;
 	for (unsigned i = 0; i < ruleSet.size(); ++i) {
@@ -672,60 +677,104 @@ void learn_concepts() {
 	combine_concepts();
 }
 
-void make_policy() {
-	int numCovered = 0;
-	int cooldown = -1;
-	for (unsigned i = 0; i < minHitSet.size() && numCovered < denotationSize; ++i) {
-		vector<int>* cDenot = minHitSet[i]->GetSimpleDenotationVec();
+int next_mask(int mask[], int obj_num) {
+	int i;
+	for (i = 0; (i < obj_num) && mask[i]; ++i)
+		mask[i] = 0;
 
-		if (minHitSet[i]->GetNonEmptyDenotationNum() == 0)
+	if (i < obj_num) {
+		mask[i] = 1;
+		return 1;
+	}
+	return 0;
+}
+
+void add_subset(int mask[], int obj_num) {
+	std::vector<int> tmpvec;
+	for (int i = 0; i < obj_num; ++i)
+		if (mask[i])
+			tmpvec.push_back(i);
+	subsets.push_back(tmpvec);
+}
+
+void make_subsets(int subset_num, int obj_num) {
+	int mask[subset_num];
+	int i;
+	for (i = 0; i < obj_num; ++i)
+		mask[i] = 0;
+	add_subset(mask, obj_num);
+	while (next_mask(mask, obj_num)) {
+		add_subset(mask, obj_num);
+	}
+}
+
+void make_features() {
+	BinaryOperator *bo, *tmp;
+	for (unsigned i = 0; i < minHitSet.size(); ++i) {
+		features.push_back(minHitSet[i]);
+		minHitSet[i]->infix(cout);
+		cout << ": " << minHitSet[i]->GetSignature();
+		cout << endl;
+	}
+	make_subsets((int) pow(2., minHitSet.size()), minHitSet.size());
+	for (unsigned i = 1; i < subsets.size(); ++i) {
+		if (subsets[i].size() == 1)
 			continue;
-		int correct[actions.size()];
-		int mistakes[actions.size()];
-		for (int tmp = 0; tmp < actions.size(); ++tmp) {
-			correct[tmp] = 0;
-			mistakes[tmp] = 0;
+		for (unsigned j = 0; j < (subsets[i].size() - 1); ++j) {
+
+			if (j == 0) {
+				bo = new Join(minHitSet[subsets[i][j]], minHitSet[subsets[i][j + 1]], preops);
+			} else {
+				bo = new Join((Expression*) tmp, minHitSet[subsets[i][j + 1]], preops);
+			}
+			tmp = bo;
 		}
+		features.push_back(bo);
+	}
+
+//	for (int i = 0; i < features.size(); ++i) {
+//		features[i]->infix(cout);
+//		cout << ": " << features[i]->GetSignature();
+//		cout << endl;
+//	}
+}
+
+void make_policy() {
+	make_features();
+	int numCovered = 0;
+	for (unsigned i = 0; i < features.size() && numCovered < denotationSize; ++i) {
+		string cSignature = features[i]->GetSignature();
+
+		if (features[i]->GetNonEmptyDenotationNum() == 0)
+			continue;
+
 		for (unsigned j = 0; j < actions.size(); ++j) {
+			int correct(0);
+			bool mistake = false;
+			vector<pair<int, int> > coVector;
 
-			//bool mistake = false;
-			//vector<pair<int, int> > coVector;
-
-			for (unsigned k = 0; k < cDenot->size(); ++k) {
-//				if ((*cDenot)[k] != 0 && !((*aDenot)[j][k])) {
-//					mistake = true;
-//					break;
-//				}
-				if ((*cDenot)[k] != 0 && (*aDenot)[j][k] && (*aDenot)[j][k] != 2) {
-					correct[j]++;
-//					pair<int, int> p(j, k);
-//					coVector.push_back(p);
-				} else
-					mistakes[j]++;
+			for (unsigned k = 0; k < cSignature.length(); ++k) {
+				if (cSignature[k] != '0' && !((*aDenot)[j][k])) {
+					mistake = true;
+					break;
+				}
+				if (cSignature[k] != '0' && (*aDenot)[j][k] && (*aDenot)[j][k] != 2) {
+					correct++;
+					pair<int, int> p(j, k);
+					coVector.push_back(p);
+				}
 			}
-//			if (!mistake && correct > 0) {
-////				for (int v = 0; v < coVector.size(); ++v)
-////					aDenot->SetCovered(coVector[v].first, coVector[v].second);
-////				numCovered += correct;
-//				Rule r(minHitSet[i], actions[j]);
-//				r.SetCorrect(correct);
-//				ruleSet.push_back(r);
-//			}
+
+			if (!mistake && correct > 0) {
+				for (int v = 0; v < coVector.size(); ++v)
+					aDenot->SetCovered(coVector[v].first, coVector[v].second);
+				numCovered += correct;
+				Rule r(features[i], actions[j]);
+				r.SetCorrect(correct);
+				ruleSet.push_back(r);
+			}
 
 		}
-
-		int min = 1000000;
-		int index = -1;
-		for (int tmp = 0; tmp < actions.size(); ++tmp) {
-			if (mistakes[tmp] < min && tmp != cooldown) {
-				min = correct[tmp];
-				index = tmp;
-			}
-		}
-		cooldown = index;
-		Rule r(minHitSet[i], actions[index]);
-		r.SetCorrect(mistakes[index]);
-		ruleSet.push_back(r);
 	}
 }
 
