@@ -39,6 +39,7 @@ public:
 	virtual std::vector<int>* GetInterpretation() = 0;
 	virtual std::vector<std::pair<int, int> >* GetRoleInterpretation() = 0;
 	virtual std::vector<Expression*> GetChildren() = 0;
+
 	inline void SimplifyDenotations() {
 		if (simpleDenotations.size() > 0)
 			return;

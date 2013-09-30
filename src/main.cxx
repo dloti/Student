@@ -128,7 +128,7 @@ void init_min_hitting_set() {
 		rnd = rand() % rootConcepts.size();
 		if (find(concept_idx.begin(), concept_idx.end(), rnd) != concept_idx.end())
 			continue;
-		if(rootConcepts[rnd]->GetHits()==0)
+		if (rootConcepts[rnd]->GetHits() == 0)
 			continue;
 
 		concept_idx.push_back(rnd);
@@ -145,7 +145,7 @@ void init_min_hitting_set() {
 void iterated() {
 	int distance(0);
 	cout << endl << " Random walks:";
-	for (int i = 0; i < 10000; ++i) {
+	for (int i = 0; i < 1000; ++i) {
 		init_min_hitting_set();
 		if (i == 0) {
 			for (unsigned j = 0; j < candidateHitSet.size(); ++j)
@@ -650,7 +650,6 @@ void printout() {
 }
 
 void cleanup() {
-
 	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
 		delete rootConcepts[i];
 	}
@@ -661,7 +660,6 @@ void cleanup() {
 
 	rootConcepts.clear();
 	rootRoles.clear();
-
 }
 
 void initialize() {
@@ -677,104 +675,94 @@ void learn_concepts() {
 	combine_concepts();
 }
 
-int next_mask(int mask[], int obj_num) {
-	int i;
-	for (i = 0; (i < obj_num) && mask[i]; ++i)
-		mask[i] = 0;
-
-	if (i < obj_num) {
-		mask[i] = 1;
-		return 1;
-	}
-	return 0;
-}
-
-void add_subset(int mask[], int obj_num) {
-	std::vector<int> tmpvec;
-	for (int i = 0; i < obj_num; ++i)
-		if (mask[i])
-			tmpvec.push_back(i);
-	subsets.push_back(tmpvec);
-}
-
-void make_subsets(int subset_num, int obj_num) {
-	int mask[subset_num];
-	int i;
-	for (i = 0; i < obj_num; ++i)
-		mask[i] = 0;
-	add_subset(mask, obj_num);
-	while (next_mask(mask, obj_num)) {
-		add_subset(mask, obj_num);
-	}
-}
-
-void make_features() {
-	BinaryOperator *bo, *tmp;
-	for (unsigned i = 0; i < minHitSet.size(); ++i) {
-		features.push_back(minHitSet[i]);
-		minHitSet[i]->infix(cout);
-		cout << ": " << minHitSet[i]->GetSignature();
-		cout << endl;
-	}
-	make_subsets((int) pow(2., minHitSet.size()), minHitSet.size());
-	for (unsigned i = 1; i < subsets.size(); ++i) {
-		if (subsets[i].size() == 1)
-			continue;
-		for (unsigned j = 0; j < (subsets[i].size() - 1); ++j) {
-
-			if (j == 0) {
-				bo = new Join(minHitSet[subsets[i][j]], minHitSet[subsets[i][j + 1]], preops);
-			} else {
-				bo = new Join((Expression*) tmp, minHitSet[subsets[i][j + 1]], preops);
-			}
-			tmp = bo;
+int make_features(int last_index) {
+	BinaryOperator *bo = NULL;
+	unsigned j = 0;
+	int ret = features.size();
+	int limit = last_index;
+	if (last_index == 0)
+		limit = features.size();
+	for (unsigned i = 0; i < limit; ++i) {
+		if (last_index == 0)
+			j = i + 1;
+		else
+			j = last_index;
+		for (; j < features.size(); ++j) {
+			if (features[i]->GetSignature().compare(features[j]->GetSignature()) == 0)
+				continue;
+			bo = new Join(features[i], features[j], preops);
+			cout << "- " << i << " " << j << " " << endl;
 		}
-		features.push_back(bo);
-	}
+		if (bo != NULL) {
+			if (bo->GetNonEmptyDenotationNum() == 0) {
+				delete bo;
+				bo = NULL;
+				continue;
+			}
 
-//	for (int i = 0; i < features.size(); ++i) {
-//		features[i]->infix(cout);
-//		cout << ": " << features[i]->GetSignature();
-//		cout << endl;
-//	}
+			features.push_back(bo);
+		}
+	}
+	return ret;
 }
 
 void make_policy() {
-	make_features();
+	for (unsigned i = 0; i < minHitSet.size(); ++i) {
+		features.push_back(minHitSet[i]);
+	}
+
 	int numCovered = 0;
-	for (unsigned i = 0; i < features.size() && numCovered < denotationSize; ++i) {
-		string cSignature = features[i]->GetSignature();
-
-		if (features[i]->GetNonEmptyDenotationNum() == 0)
-			continue;
-
-		for (unsigned j = 0; j < actions.size(); ++j) {
-			int correct(0);
-			bool mistake = false;
+	int last_index = 0;
+	int layercnt = 0;
+	while (numCovered < denotationSize) {
+		cout << "Last index: " << last_index << endl;
+//		cout << "Features: " << features.size() << endl;
+//		cout << "Covered: " << numCovered << endl;
+//		for (unsigned j = 0; j < features.size(); ++j) {
+//			cout << features[j]->GetSignature() << endl;
+//		}
+		for (unsigned i = last_index; i < features.size(); ++i) {
+			string cSignature = features[i]->GetSignature();
+			if (features[i]->GetNonEmptyDenotationNum() == 0) {
+				cout << "ERR: all empty feature ";
+				features[i]->infix(cout);
+				cout << endl;
+				continue;
+			}
 			vector<pair<int, int> > coVector;
+			for (unsigned j = 0; j < actions.size(); ++j) {
+				int correct(0);
+				bool mistake = false;
 
-			for (unsigned k = 0; k < cSignature.length(); ++k) {
-				if (cSignature[k] != '0' && !((*aDenot)[j][k])) {
-					mistake = true;
-					break;
+				for (unsigned k = 0; k < cSignature.length(); ++k) {
+
+					if (cSignature[k] != '0' && !((*aDenot)[j][k])) {
+						mistake = true;
+						break;
+					}
+					if (cSignature[k] != '0' && (*aDenot)[j][k] && (*aDenot)[j][k] != 2) {
+						cout << "cover" << endl;
+						++correct;
+						pair<int, int> p(j, k);
+						coVector.push_back(p);
+					}
 				}
-				if (cSignature[k] != '0' && (*aDenot)[j][k] && (*aDenot)[j][k] != 2) {
-					correct++;
-					pair<int, int> p(j, k);
-					coVector.push_back(p);
+
+				if (!mistake && correct > 0) {
+					for (unsigned v = 0; v < coVector.size(); ++v) {
+						aDenot->SetCovered(coVector[v].first, coVector[v].second);
+					}
+					numCovered += correct;
+					Rule r(features[i], actions[j]);
+					r.SetCorrect(correct);
+					ruleSet.push_back(r);
 				}
+				coVector.clear();
 			}
-
-			if (!mistake && correct > 0) {
-				for (int v = 0; v < coVector.size(); ++v)
-					aDenot->SetCovered(coVector[v].first, coVector[v].second);
-				numCovered += correct;
-				Rule r(features[i], actions[j]);
-				r.SetCorrect(correct);
-				ruleSet.push_back(r);
-			}
-
 		}
+
+		last_index = make_features(last_index);
+
 	}
 }
 
