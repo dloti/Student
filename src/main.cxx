@@ -35,7 +35,8 @@ vector<vector<Expression*> > conceptSets;
 vector<int> setsTouched;
 vector<Expression*> minHitSet;
 vector<Expression*> candidateHitSet;
-vector<Expression*> features;
+map<string, Expression*> features;
+map<string, Expression*> candidateFeatures;
 vector<vector<int> > subsets;
 
 vector<Expression*> rootConcepts;
@@ -83,15 +84,15 @@ int hit_sets(Expression* concept) {
 	return num_hit;
 }
 
-void unhit_sets(Expression* concept) {
-	vector<int> hitSetIndexes = concept->GetHitSetIndexes();
-	for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
-		if (!setsTouched[hitSetIndexes[j]])
-			cout << "ERR set not touched";
-		setsTouched[hitSetIndexes[j]] -= 1;
-	}
-	concept->SetIsHitting(false);
-}
+//void unhit_sets(Expression* concept) {
+//	vector<int> hitSetIndexes = concept->GetHitSetIndexes();
+//	for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
+//		if (!setsTouched[hitSetIndexes[j]])
+//			cout << "ERR set not touched";
+//		setsTouched[hitSetIndexes[j]] -= 1;
+//	}
+//	concept->SetIsHitting(false);
+//}
 
 void find_min_hitset_greedy() {
 	int remainingSets = conceptSets.size();
@@ -145,7 +146,7 @@ void init_min_hitting_set() {
 void iterated() {
 	int distance(0);
 	cout << endl << " Random walks:";
-	for (int i = 0; i < 1000; ++i) {
+	for (int i = 0; i < 10000; ++i) {
 		init_min_hitting_set();
 		if (i == 0) {
 			for (unsigned j = 0; j < candidateHitSet.size(); ++j)
@@ -275,15 +276,14 @@ void get_all_states() {
 void generate_concept_sets() {
 	srand((unsigned int) time(NULL));
 	get_all_states();
-	cout << endl;
-
+	string signature;
 	for (unsigned i = 0; i < allStates.size() - 1; ++i) {
 		for (unsigned j = i + 1; j < allStates.size(); ++j) {
 			if (allStates[i].GetAction().compare(allStates[j].GetAction()) != 0) {
 				conceptSets.push_back(vector<Expression*>());
 				for (unsigned k = 0; k < rootConcepts.size(); ++k) {
-					rootConcepts[k]->SimplifyDenotations();
-					if (rootConcepts[k]->GetSignature()[i] != rootConcepts[k]->GetSignature()[j]) {
+					signature = rootConcepts[k]->GetSignature();
+					if (signature[i] != signature[j]) {
 						conceptSets[conceptSets.size() - 1].push_back(rootConcepts[k]);
 						rootConcepts[k]->IncHits();
 						rootConcepts[k]->AddHit(conceptSets.size() - 1);
@@ -294,10 +294,10 @@ void generate_concept_sets() {
 			}
 		}
 	}
-
 	for (unsigned i = 0; i < conceptSets.size(); ++i)
 		setsTouched.push_back(0);
 
+	cout << "Finding min hitting set" << endl;
 	//find_min_hitset_greedy();
 	iterated();
 	//simulated_annealing();
@@ -675,57 +675,66 @@ void learn_concepts() {
 	combine_concepts();
 }
 
-int make_features(int last_index) {
+void make_features() {
 	BinaryOperator *bo = NULL;
-	unsigned j = 0;
-	int ret = features.size();
-	int limit = last_index;
-	if (last_index == 0)
-		limit = features.size();
-	for (unsigned i = 0; i < limit; ++i) {
-		if (last_index == 0)
-			j = i + 1;
-		else
-			j = last_index;
-		for (; j < features.size(); ++j) {
-			if (features[i]->GetSignature().compare(features[j]->GetSignature()) == 0)
-				continue;
-			bo = new Join(features[i], features[j], preops);
-			cout << "- " << i << " " << j << " " << endl;
-		}
-		if (bo != NULL) {
+	map<string, Expression*>::iterator it = features.begin(), fnd;
+	map<string, Expression*>::iterator cit = candidateFeatures.begin();
+	map<string, Expression*> tmp;
+	for (it = features.begin(); it != features.end(); ++it) {
+		for (cit = candidateFeatures.begin(); cit != candidateFeatures.end(); ++cit) {
+			bo = new Join((*it).second, (*cit).second, preops);
+			string signature = bo->GetSignature();
 			if (bo->GetNonEmptyDenotationNum() == 0) {
 				delete bo;
-				bo = NULL;
 				continue;
 			}
+			fnd = features.find(signature);
+			if (fnd != features.end()) {
+				if ((bo->EqualDenotationVec((*fnd).second))) {
+					delete bo;
+					return;
+				}
+			}
 
-			features.push_back(bo);
+			fnd = candidateFeatures.find(signature);
+			if (fnd != candidateFeatures.end()) {
+				if ((bo->EqualDenotationVec((*fnd).second))) {
+					delete bo;
+					return;
+				}
+				tmp[signature] = bo;
+			}
 		}
 	}
-	return ret;
+	candidateFeatures.clear();
+	candidateFeatures = tmp;
 }
 
 void make_policy() {
 	for (unsigned i = 0; i < minHitSet.size(); ++i) {
-		features.push_back(minHitSet[i]);
+		features[minHitSet[i]->GetSignature()] = minHitSet[i];
+		candidateFeatures[minHitSet[i]->GetSignature()] = minHitSet[i];
 	}
-
+	map<string, Expression*>::iterator cit = candidateFeatures.begin();
 	int numCovered = 0;
-	int last_index = 0;
-	int layercnt = 0;
+	int layer = 0;
+	cout << "Total number of concepts: " << rootConcepts.size() << endl;
 	while (numCovered < denotationSize) {
-		cout << "Last index: " << last_index << endl;
 //		cout << "Features: " << features.size() << endl;
 //		cout << "Covered: " << numCovered << endl;
 //		for (unsigned j = 0; j < features.size(); ++j) {
 //			cout << features[j]->GetSignature() << endl;
 //		}
-		for (unsigned i = last_index; i < features.size(); ++i) {
-			string cSignature = features[i]->GetSignature();
-			if (features[i]->GetNonEmptyDenotationNum() == 0) {
+		if (candidateFeatures.size() == 0) {
+			cout << "Full coverage not possible, total number of features generated: " << features.size()
+					<< " covered: " << numCovered << " of " << denotationSize << endl;
+			return;
+		}
+		for (cit = candidateFeatures.begin(); cit != candidateFeatures.end(); ++cit) {
+			string cSignature = (*cit).second->GetSignature();
+			if ((*cit).second->GetNonEmptyDenotationNum() == 0) {
 				cout << "ERR: all empty feature ";
-				features[i]->infix(cout);
+				(*cit).second->infix(cout);
 				cout << endl;
 				continue;
 			}
@@ -741,7 +750,6 @@ void make_policy() {
 						break;
 					}
 					if (cSignature[k] != '0' && (*aDenot)[j][k] && (*aDenot)[j][k] != 2) {
-						cout << "cover" << endl;
 						++correct;
 						pair<int, int> p(j, k);
 						coVector.push_back(p);
@@ -752,17 +760,19 @@ void make_policy() {
 					for (unsigned v = 0; v < coVector.size(); ++v) {
 						aDenot->SetCovered(coVector[v].first, coVector[v].second);
 					}
+					cout << "Rule added" << endl;
 					numCovered += correct;
-					Rule r(features[i], actions[j]);
+					Rule r((*cit).second, actions[j]);
 					r.SetCorrect(correct);
 					ruleSet.push_back(r);
 				}
 				coVector.clear();
 			}
 		}
-
-		last_index = make_features(last_index);
-
+		if (layer != 0)
+			features.insert(candidateFeatures.begin(), candidateFeatures.end());
+		++layer;
+		make_features();
 	}
 }
 

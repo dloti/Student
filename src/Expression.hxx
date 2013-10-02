@@ -25,6 +25,7 @@ protected:
 	int nonEmptyDenot;
 	int hitSets;
 	bool isHitting;
+	std::string signature;
 	std::vector<int> hitSetIndexes;
 	std::vector<int> simpleDenotations;
 	std::vector<std::vector<int> > denotations;
@@ -65,6 +66,9 @@ public:
 	}
 
 	inline std::string GetSignature() {
+		if (this->signature.length() != 0)
+			return this->signature;
+
 		std::string ret;
 		if (simpleDenotations.size() == 0) {
 			for (unsigned i = 0; i < denotations.size(); ++i)
