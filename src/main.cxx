@@ -49,7 +49,7 @@ vector<string> actions;
 ActionDenotations* aDenot;
 vector<Instance> instances;
 vector<State> allStates;
-vector<Rule> ruleSet;
+//vector<Rule> ruleSet;
 PreOps* preops;
 int denotationSize(0);
 int runCount(1);
@@ -642,11 +642,11 @@ void printout() {
 		cout << endl;
 	}
 
-	cout << "\tRuleset" << endl;
-	for (unsigned i = 0; i < ruleSet.size(); ++i) {
-		cout << ruleSet[i];
-		cout << endl;
-	}
+//	cout << "\tRuleset" << endl;
+//	for (unsigned i = 0; i < ruleSet.size(); ++i) {
+//		cout << ruleSet[i];
+//		cout << endl;
+//	}
 }
 
 void cleanup() {
@@ -713,76 +713,6 @@ void make_features() {
 	for (fnd = tmp.begin(); fnd != tmp.end(); ++fnd)
 		candidateFeatures[(*fnd).second->GetSignature()] = (*fnd).second;
 }
-
-void make_policy() {
-	for (unsigned i = 0; i < minHitSet.size(); ++i) {
-		features[minHitSet[i]->GetSignature()] = minHitSet[i];
-		candidateFeatures[minHitSet[i]->GetSignature()] = minHitSet[i];
-	}
-	map<string, Expression*>::iterator cit = candidateFeatures.begin();
-	int numCovered = 0;
-	int layer = 0;
-	cout << "Total number of concepts: " << rootConcepts.size() << endl;
-	while (numCovered < denotationSize) {
-//		cout << "Features: " << features.size() << endl;
-//		cout << "Covered: " << numCovered << endl;
-//		for (unsigned j = 0; j < features.size(); ++j) {
-//			cout << features[j]->GetSignature() << endl;
-//		}
-		if (candidateFeatures.size() == 0) {
-			cout << "Full coverage not possible, total number of features generated: " << features.size()
-					<< " covered: " << numCovered << " of " << denotationSize << endl;
-			return;
-		}
-
-		for (cit = candidateFeatures.begin(); cit != candidateFeatures.end(); ++cit) {
-			string cSignature = (*cit).second->GetSignature();
-			if ((*cit).second->GetNonEmptyDenotationNum() == 0) {
-				cout << "ERR: all empty feature ";
-				(*cit).second->infix(cout);
-				cout << endl;
-				continue;
-			}
-			bool mistake = false;
-			int correct = 0;
-
-			for (unsigned j = 0; j < actions.size(); ++j) {
-				correct = 0;
-				mistake = false;
-				vector<pair<int, int> > coVector;
-				for (unsigned k = 0; k < cSignature.length(); ++k) {
-
-					if (cSignature[k] != '0' && !((*aDenot)[j][k])) {
-						mistake = true;
-						break;
-					}
-					if (cSignature[k] != '0' && (*aDenot)[j][k] && (*aDenot)[j][k] != 2) {
-						++correct;
-						pair<int, int> p(j, k);
-						coVector.push_back(p);
-					}
-				}
-
-				if (!mistake && correct > 0) {
-					for (unsigned v = 0; v < coVector.size(); ++v) {
-						aDenot->SetCovered(coVector[v].first, coVector[v].second);
-					}
-					numCovered += correct;
-					Rule r((*cit).second, actions[j]);
-					r.SetCorrect(correct);
-					ruleSet.push_back(r);
-				}
-				coVector.clear();
-			}
-		}
-
-		if (layer != 0)
-			features.insert(candidateFeatures.begin(), candidateFeatures.end());
-		++layer;
-		make_features();
-	}
-}
-
 void write_policy() {
 	ofstream fout;
 	fout.open("policy.txt");
@@ -792,11 +722,106 @@ void write_policy() {
 	for (unsigned i = 0; i < primitiveRoles.size(); ++i)
 		fout << primitiveRoles[i] << " ";
 	fout << endl;
-	for (unsigned i = 0; i < ruleSet.size(); ++i)
-		ruleSet[i].SaveRule(fout);
-	fout << endl;
-
+	for (unsigned i = 0; i < minHitSet.size(); ++i) {
+		minHitSet[i]->prefix(fout);
+		fout << endl;
+		fout << minHitSet[i]->GetSignature();
+		fout << endl;
+	}
+	fout.close();
+	fout.open("actions.txt");
+	for (unsigned j = 0; j < instances.size(); ++j) {
+		for (unsigned k = 0; k < instances[j].GetStates()->size(); ++k) {
+			for (unsigned l = 0; l < actions.size(); ++l) {
+				if (actions[l].compare(instances[j][k].GetAction()) == 0){
+					if(j==instances.size()-1 && k == instances[j].GetStates()->size()-1)
+						fout<<l;
+					else
+						fout << l << " ";
+				}
+			}
+		}
+	}
+	fout.close();
 }
+//void make_policy() {
+//	for (unsigned i = 0; i < minHitSet.size(); ++i) {
+//		features[minHitSet[i]->GetSignature()] = minHitSet[i];
+//		candidateFeatures[minHitSet[i]->GetSignature()] = minHitSet[i];
+//	}
+//	map<string, Expression*>::iterator cit = candidateFeatures.begin();
+//	int numCovered = 0;
+//	int layer = 0;
+//	cout << "Total number of concepts: " << rootConcepts.size() << endl;
+//	while (numCovered < denotationSize) {
+//		if (candidateFeatures.size() == 0) {
+//			cout << "Full coverage not possible, total number of features generated: " << features.size()
+//					<< " covered: " << numCovered << " of " << denotationSize << endl;
+//			return;
+//		}
+//
+//		for (cit = candidateFeatures.begin(); cit != candidateFeatures.end(); ++cit) {
+//			string cSignature = (*cit).second->GetSignature();
+//			if ((*cit).second->GetNonEmptyDenotationNum() == 0) {
+//				cout << "ERR: all empty feature ";
+//				(*cit).second->infix(cout);
+//				cout << endl;
+//				continue;
+//			}
+//			bool mistake = false;
+//			int correct = 0;
+//
+//			for (unsigned j = 0; j < actions.size(); ++j) {
+//				correct = 0;
+//				mistake = false;
+//				vector<pair<int, int> > coVector;
+//				for (unsigned k = 0; k < cSignature.length(); ++k) {
+//
+//					if (cSignature[k] != '0' && !((*aDenot)[j][k])) {
+//						mistake = true;
+//						break;
+//					}
+//					if (cSignature[k] != '0' && (*aDenot)[j][k] && (*aDenot)[j][k] != 2) {
+//						++correct;
+//						pair<int, int> p(j, k);
+//						coVector.push_back(p);
+//					}
+//				}
+//
+//				if (!mistake && correct > 0) {
+//					for (unsigned v = 0; v < coVector.size(); ++v) {
+//						aDenot->SetCovered(coVector[v].first, coVector[v].second);
+//					}
+//					numCovered += correct;
+//					Rule r((*cit).second, actions[j]);
+//					r.SetCorrect(correct);
+//					ruleSet.push_back(r);
+//				}
+//				coVector.clear();
+//			}
+//		}
+//
+//		if (layer != 0)
+//			features.insert(candidateFeatures.begin(), candidateFeatures.end());
+//		++layer;
+//		make_features();
+//	}
+//}
+
+//void write_policy() {
+//	ofstream fout;
+//	fout.open("policy.txt");
+//	for (unsigned i = 0; i < primitiveConcepts.size(); ++i)
+//		fout << primitiveConcepts[i] << " ";
+//	fout << endl;
+//	for (unsigned i = 0; i < primitiveRoles.size(); ++i)
+//		fout << primitiveRoles[i] << " ";
+//	fout << endl;
+//	for (unsigned i = 0; i < ruleSet.size(); ++i)
+//		ruleSet[i].SaveRule(fout);
+//	fout << endl;
+//
+//}
 }
 using namespace mn;
 
@@ -809,8 +834,8 @@ int main(int argc, char** argv) {
 	t0 = time_used();
 	learn_concepts();
 	generate_concept_sets();
-	make_policy();
-	sort(ruleSet.begin(), ruleSet.end());
+//	make_policy();
+//	sort(ruleSet.begin(), ruleSet.end());
 	printout();
 	write_policy();
 	tf = time_used();
