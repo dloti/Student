@@ -25,6 +25,7 @@ protected:
 	int nonEmptyDenot;
 	int hitSets;
 	bool isHitting;
+	unsigned weight;
 	std::string signature;
 	std::vector<int> hitSetIndexes;
 	std::vector<int> simpleDenotations;
@@ -50,9 +51,9 @@ public:
 			it = std::find(subsets->begin(), subsets->end(), denotations[i]);
 			if (it == subsets->end())
 				std::cout << "ERR denotation simplifier" << std::endl;
-			//		for (unsigned j = 0; j < denotations[i].size(); ++j)
-			//			std::cout << denotations[i][j] << " ";
-			//		std::cout << std::endl;
+//					for (unsigned j = 0; j < denotations[i].size(); ++j)
+//						std::cout << denotations[i][j] << " ";
+//					std::cout << std::endl;
 			simpleDenotations.push_back((it - subsets->begin()));
 		}
 	}
@@ -118,6 +119,10 @@ public:
 
 	inline std::vector<int> GetHitSetIndexes() {
 		return hitSetIndexes;
+	}
+
+	inline unsigned GetWeight() {
+		return weight;
 	}
 
 	inline bool IsHitting() {

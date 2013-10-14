@@ -37,6 +37,7 @@ void ValueRestriction::UpdateDenotations() {
 	}
 
 	std::vector<int> tmpInterpretation;
+	std::vector<int> secondPart;
 	for (unsigned i = 0; i < rDenot.size(); ++i) {
 		std::vector<int> riFirst;
 		std::vector<std::pair<int, int> >::iterator pairIterator;
@@ -49,12 +50,26 @@ void ValueRestriction::UpdateDenotations() {
 		std::sort(it, end);
 		std::vector<int>::iterator first2 = cDenot[i].begin();
 		std::vector<int>::iterator last2 = cDenot[i].end();
-		std::set_intersection(it, end, first2, last2, std::back_inserter(tmpInterpretation));
+		std::sort(first2, last2);
+		std::set_intersection(it, end, first2, last2, std::back_inserter(secondPart));
+
+		for (int j = 0; j < secondPart.size(); ++j) {
+			for (pairIterator = rDenot[i].begin(); pairIterator != rDenot[i].end(); ++pairIterator) {
+				if (pairIterator->second == secondPart[j]) {
+					if (std::find(tmpInterpretation.begin(), tmpInterpretation.end(), pairIterator->first)
+							== tmpInterpretation.end()) {
+						tmpInterpretation.push_back(pairIterator->first);
+						break;
+					}
+				}
+			}
+		}
 		if (tmpInterpretation.size() > 0)
 			this->nonEmptyDenot++;
-		//sort(tmpInterpretation.begin(), tmpInterpretation.begin());
+		sort(tmpInterpretation.begin(), tmpInterpretation.end());
 		this->denotations.push_back(tmpInterpretation);
 		tmpInterpretation.clear();
+		secondPart.clear();
 	}
 }
 
@@ -68,6 +83,7 @@ void ValueRestriction::UpdateSimpleDenotations() {
 	}
 
 	std::vector<int> tmpInterpretation;
+	std::vector<int> secondPart;
 	for (unsigned i = 0; i < rDenot.size(); ++i) {
 		std::vector<int> riFirst;
 		std::vector<std::pair<int, int> >::iterator pairIterator;
@@ -80,34 +96,47 @@ void ValueRestriction::UpdateSimpleDenotations() {
 		std::sort(it, end);
 		std::vector<int>::iterator first2 = (*subsets)[(*cDenot)[i]].begin();
 		std::vector<int>::iterator last2 = (*subsets)[(*cDenot)[i]].end();
-		std::set_intersection(it, end, first2, last2, std::back_inserter(tmpInterpretation));
+		std::set_intersection(it, end, first2, last2, std::back_inserter(secondPart));
+
+		for (int j = 0; j < secondPart.size(); ++j) {
+			for (pairIterator = rDenot[i].begin(); pairIterator != rDenot[i].end(); ++pairIterator) {
+				if (pairIterator->second == secondPart[j]) {
+					if (std::find(tmpInterpretation.begin(), tmpInterpretation.end(), pairIterator->first)
+							== tmpInterpretation.end()) {
+						tmpInterpretation.push_back(pairIterator->first);
+						break;
+					}
+				}
+			}
+		}
 		if (tmpInterpretation.size() > 0)
 			this->nonEmptyDenot++;
-		//sort(tmpInterpretation.begin(), tmpInterpretation.begin());
+		sort(tmpInterpretation.begin(), tmpInterpretation.end());
 		this->denotations.push_back(tmpInterpretation);
 		tmpInterpretation.clear();
+		secondPart.clear();
 	}
 }
 
 void ValueRestriction::UpdateInterpretation() {
-	this->left->UpdateInterpretation();
-	this->right->UpdateInterpretation();
-	std::vector<std::pair<int, int> >* ri = (this->left)->GetRoleInterpretation();
-	//(dynamic_cast<RoleNode*>(this->left))->GetRoleInterpretation();
-	std::vector<int> riFirst;
-	std::vector<std::pair<int, int> >::iterator pairIterator;
-	std::vector<int>::iterator it, end;
-	for (pairIterator = ri->begin(); pairIterator != ri->end(); ++pairIterator) {
-		riFirst.push_back(pairIterator->second);
-	}
-	it = riFirst.begin();
-	end = riFirst.end();
-	std::sort(it, end);
-	std::vector<int>::iterator first2 = this->right->GetInterpretation()->begin();
-	std::vector<int>::iterator last2 = this->right->GetInterpretation()->end();
-
-	this->ClearInterpretation();
-	std::set_intersection(it, end, first2, last2, std::back_inserter(this->interpretation));
+//	this->left->UpdateInterpretation();
+//	this->right->UpdateInterpretation();
+//	std::vector<std::pair<int, int> >* ri = (this->left)->GetRoleInterpretation();
+//	//(dynamic_cast<RoleNode*>(this->left))->GetRoleInterpretation();
+//	std::vector<int> riFirst;
+//	std::vector<std::pair<int, int> >::iterator pairIterator;
+//	std::vector<int>::iterator it, end;
+//	for (pairIterator = ri->begin(); pairIterator != ri->end(); ++pairIterator) {
+//		riFirst.push_back(pairIterator->second);
+//	}
+//	it = riFirst.begin();
+//	end = riFirst.end();
+//	std::sort(it, end);
+//	std::vector<int>::iterator first2 = this->right->GetInterpretation()->begin();
+//	std::vector<int>::iterator last2 = this->right->GetInterpretation()->end();
+//
+//	this->ClearInterpretation();
+//	std::set_intersection(it, end, first2, last2, std::back_inserter(this->interpretation));
 }
 
 ValueRestriction::~ValueRestriction() {

@@ -109,3 +109,9 @@ PreOps::~PreOps() {
 	// TODO Auto-generated destructor stub
 }
 
+void PreOps::Print(int subset_num, std::vector<std::string> allObjects) {
+	std::vector<int> subset = this->subsets[subset_num];
+	for (unsigned i = 0; i < subset.size(); ++i)
+		std::cout << allObjects[subset[i]] << " ";
+
+}

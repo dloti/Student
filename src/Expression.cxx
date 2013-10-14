@@ -12,6 +12,7 @@ Expression::Expression() {
 	this->isRole = false;
 	hitSets = 0;
 	isHitting = false;
+	weight = 1;
 }
 
 Expression::~Expression() {

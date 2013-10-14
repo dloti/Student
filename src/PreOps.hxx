@@ -17,7 +17,7 @@ class PreOps {
 	int obj_num, subset_num;
 	std::vector<std::vector<int> > subsets;
 	std::map<int, int> nots;
-	std::map<std::pair<int,int>, int> joins;
+	std::map<std::pair<int, int>, int> joins;
 	void MakeSubsets();
 	void printv(int mask[]);
 	int NextMask(int mask[]);
@@ -27,17 +27,19 @@ class PreOps {
 
 public:
 	PreOps(int obj_num);
-	inline std::vector<std::vector<int> >* GetSubsets(){
+	inline std::vector<std::vector<int> >* GetSubsets() {
 		return &subsets;
 	}
 
-	inline std::map<std::pair<int,int>, int>* GetJoinMap(){
+	inline std::map<std::pair<int, int>, int>* GetJoinMap() {
 		return &joins;
 	}
 
-	inline std::map<int, int>* GetNotMap(){
-			return &nots;
-		}
+	inline std::map<int, int>* GetNotMap() {
+		return &nots;
+	}
+
+	void Print(int subset_num, std::vector<std::string> allObjects);
 
 	void TestPrint();
 	virtual ~PreOps();

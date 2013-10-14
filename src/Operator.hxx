@@ -9,6 +9,7 @@
 #define OPERATOR_HXX_
 #include <typeinfo>
 #include "Expression.hxx"
+#include <cmath>
 namespace expression {
 class Operator: public Expression {
 protected:
@@ -49,6 +50,7 @@ public:
 
 	inline void SetLevel(int lvl) {
 		this->level = lvl;
+		weight = 10 * lvl;
 	}
 	virtual ~Operator();
 };
