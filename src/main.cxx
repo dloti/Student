@@ -170,7 +170,7 @@ void iterated() {
 				minHitSet.push_back(candidateHitSet[j]);
 				minHitSetWeight = candidateWeight;
 		}
-		distance = candidateHitSet.size() - minHitSet.size();
+		distance = candidateHitSet.size()*candidateWeight - minHitSet.size()*minHitSetWeight;
 		if (distance < 0) {
 			minHitSet.clear();
 			minHitSetWeight = candidateWeight;
@@ -856,6 +856,26 @@ void write_policy() {
 //	fout << endl;
 //
 //}
+
+bool testHitSet(){
+	vector<int> hindex;
+	for(int i=0;i<minHitSet.size();++i){
+		vector<int> vec = minHitSet[i]->GetHitSetIndexes();
+		for(int j=0;j<vec.size();++j){
+			if(std::find(hindex.begin(), hindex.end(),vec[j])==hindex.end())
+				hindex.push_back(vec[j]);
+		}
+	}
+
+	sort(hindex.begin(),hindex.end());
+	for(int i=0;i<hindex.size();++i){
+		if(hindex[i]!=i) {
+			return false;
+		}
+	}
+
+	return true;
+}
 }
 using namespace mn;
 
@@ -876,6 +896,10 @@ int main(int argc, char** argv) {
 	cout << endl << "Total time: ";
 	report_interval(t0, tf, cout);
 	cout << endl;
+
+	if(testHitSet())
+		cout<<"HitSet fine"<<endl;
+	else cout<<"ERR HITSET WRONG"<<endl;
 	cleanup();
 	return 0;
 }
