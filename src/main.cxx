@@ -163,14 +163,14 @@ unsigned getMinWeight() {
 void iterated() {
 	int distance(0);
 	cout << endl << " Random walks:";
-	for (int i = 0; i < 10000; ++i) {
+	for (int i = 0; i < 100000; ++i) {
 		init_min_hitting_set();
 		if (i == 0) {
 			for (unsigned j = 0; j < candidateHitSet.size(); ++j)
 				minHitSet.push_back(candidateHitSet[j]);
 				minHitSetWeight = candidateWeight;
 		}
-		distance = candidateWeight - minHitSetWeight;
+		distance = candidateHitSet.size() - minHitSet.size();
 		if (distance < 0) {
 			minHitSet.clear();
 			minHitSetWeight = candidateWeight;
@@ -651,7 +651,7 @@ void printout() {
 //			//}
 //		}
 //	}
-////
+//
 //	for (unsigned i = 0; i < rootRoles.size(); ++i) {
 //		rootRoles[i]->infix(cout);
 //		cout << endl;
