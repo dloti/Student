@@ -32,6 +32,7 @@ map<string, vector<Expression*> > candidateDenotMap;
 map<string, vector<Expression*> > rootDenotMap;
 
 vector<vector<Expression*> > conceptSets;
+vector<Expression*> hittingConcepts;
 vector<int> setsTouched;
 vector<Expression*> minHitSet;
 vector<Expression*> candidateHitSet;
@@ -39,6 +40,7 @@ map<string, Expression*> features;
 map<string, Expression*> candidateFeatures;
 unsigned candidateWeight(0), minHitSetWeight(0);
 vector<vector<int> > subsets;
+double avHitWeight(0);
 
 vector<Expression*> rootConcepts;
 vector<Expression*> rootRoles;
@@ -68,7 +70,7 @@ void print_min_hitset() {
 }
 
 bool moreHits(Expression* x, Expression* y) {
-	return x->GetHits() > y->GetHits();
+	return (x->GetHits() / x->GetWeight()) > (y->GetHits() / y->GetWeight());
 }
 double uniform_deviate(int seed) {
 	return seed * (1.0 / (RAND_MAX + 1.0));
@@ -79,40 +81,129 @@ int hit_sets(Expression* concept) {
 	vector<int> hitSetIndexes = concept->GetHitSetIndexes();
 	for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
 		if (!setsTouched[hitSetIndexes[j]])
-			num_hit++;
+			++num_hit;
 		setsTouched[hitSetIndexes[j]] += 1;
 	}
 	return num_hit;
 }
 
-//void unhit_sets(Expression* concept) {
-//	vector<int> hitSetIndexes = concept->GetHitSetIndexes();
-//	for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
-//		if (!setsTouched[hitSetIndexes[j]])
-//			cout << "ERR set not touched";
-//		setsTouched[hitSetIndexes[j]] -= 1;
-//	}
-//	concept->SetIsHitting(false);
-//}
-
 void find_min_hitset_greedy() {
 	int remainingSets = conceptSets.size();
-	for (unsigned i = 0; i < conceptSets.size(); ++i)
-		if (conceptSets[i].size() == 0)
-			--remainingSets;
-	sort(rootConcepts.begin(), rootConcepts.end(), moreHits);
+	sort(hittingConcepts.begin(), hittingConcepts.end(), moreHits);
 	int conc = 0;
 	while (remainingSets > 0) {
-		if (conc >= rootConcepts.size()) {
-			cout << " min hitting set not possible!!!!";
+		if (conc >= hittingConcepts.size()) {
+			cout << "ERR min hitting set not possible!!!!";
 			return;
 		}
-		if (rootConcepts[conc]->IsHitting())
+		if (hittingConcepts[conc]->GetHits() == 0)
 			continue;
-		rootConcepts[conc]->SetIsHitting(true);
-		minHitSet.push_back(rootConcepts[conc]);
-		remainingSets -= hit_sets(rootConcepts[conc]);
+		if (hittingConcepts[conc]->IsHitting())
+			continue;
+		hittingConcepts[conc]->SetIsHitting(true);
+		minHitSet.push_back(hittingConcepts[conc]);
+		minHitSetWeight += hittingConcepts[conc]->GetWeight();
+		remainingSets -= hit_sets(hittingConcepts[conc]);
 		conc++;
+	}
+}
+
+void set_average_weight_hit() {
+	avHitWeight = 0;
+	for (int i = 0; i < hittingConcepts.size(); ++i)
+		avHitWeight += hittingConcepts[i]->GetWeight();
+	avHitWeight /= hittingConcepts.size();
+	cout << "Hitting concepts:" << hittingConcepts.size() << " Average hit/weight: " << avHitWeight << endl;
+}
+//TODO
+int boltzman() {
+	int cnd;
+}
+
+vector<int> candidate_sgreedy() {
+	int remainingSets = conceptSets.size();
+	candidateWeight = 0;
+	vector<int> st;
+	vector<int> thrown_out;
+	for (unsigned i = 0; i < conceptSets.size(); ++i)
+		st.push_back(0);
+	int cnd = -1;
+	int cnt = -1;
+	while (remainingSets > 0) {
+		if (cnt == -1) {
+			cnd = rand() % hittingConcepts.size();
+			if ((hittingConcepts[cnd]->GetHits() / hittingConcepts[cnd]->GetWeight()) < avHitWeight)
+				continue;
+			if (find(minHitSet.begin(), minHitSet.end(), hittingConcepts[cnd]) != minHitSet.end())
+				continue;
+			if (hittingConcepts[cnd]->GetHits() == 0)
+				continue;
+			candidateHitSet.push_back(hittingConcepts[cnd]);
+			candidateWeight += hittingConcepts[cnd]->GetWeight();
+			vector<int> hitSetIndexes = hittingConcepts[cnd]->GetHitSetIndexes();
+			for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
+				if (!st[hitSetIndexes[j]])
+					--remainingSets;
+				st[hitSetIndexes[j]] += 1;
+			}
+			++cnt;
+			cnd = -1;
+		} else {
+			++cnd;
+			vector<int> hitSetIndexes = minHitSet[cnd]->GetHitSetIndexes();
+			bool subsumed = true;
+			for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
+				if (!st[hitSetIndexes[j]]) {
+					subsumed = false;
+				}
+			}
+			if (subsumed) {
+				thrown_out.push_back(cnd);
+				continue;
+			}
+
+			candidateHitSet.push_back(minHitSet[cnd]);
+			candidateWeight += minHitSet[cnd]->GetWeight();
+
+			for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
+				if (!st[hitSetIndexes[j]])
+					--remainingSets;
+				st[hitSetIndexes[j]] += 1;
+				++cnt;
+			}
+
+			if (cnd == (minHitSet.size() - 1))
+				break;
+		}
+	}
+	if (remainingSets > 0)
+		thrown_out.clear();
+	return thrown_out;
+}
+
+void sgreedy() {
+	find_min_hitset_greedy();
+	int distance(0);
+	cout << endl << " Stochastic greedy: " << minHitSet.size() << " w:" << minHitSetWeight << " ";
+	for (int i = 0; i < 10000; ++i) {
+		vector<int> thrown_out = candidate_sgreedy();
+		if (thrown_out.size() == 0)
+			continue;
+
+		if ((candidateHitSet.size() <= minHitSet.size()) && (candidateWeight <= minHitSetWeight)) {
+			for (int j = 0; j < thrown_out.size(); ++j) {
+				minHitSet[j]->SetIsHitting(false);
+			}
+
+			minHitSet.clear();
+			minHitSetWeight = candidateWeight;
+			for (unsigned i = 0; i < candidateHitSet.size(); ++i) {
+				candidateHitSet[i]->SetIsHitting(true);
+				minHitSet.push_back(candidateHitSet[i]);
+			}
+			cout << minHitSet.size() << " w:" << minHitSetWeight << " ";
+		}
+		candidateHitSet.clear();
 	}
 }
 
@@ -123,9 +214,6 @@ void init_min_hitting_set() {
 	vector<int> concept_idx;
 	for (unsigned i = 0; i < conceptSets.size(); ++i)
 		st.push_back(0);
-	for (unsigned i = 0; i < conceptSets.size(); ++i)
-		if (conceptSets[i].size() == 0)
-			--remainingSets;
 	int rnd = 0;
 	while (remainingSets > 0) {
 		rnd = rand() % rootConcepts.size();
@@ -146,20 +234,6 @@ void init_min_hitting_set() {
 	}
 }
 
-unsigned getCandidateWeight() {
-	unsigned ret = 0;
-	for (unsigned j = 0; j < candidateHitSet.size(); ++j)
-		ret += candidateHitSet[j]->GetWeight();
-	return ret;
-}
-
-unsigned getMinWeight() {
-	unsigned ret = 0;
-	for (unsigned j = 0; j < minHitSet.size(); ++j)
-		ret += minHitSet[j]->GetWeight();
-	return ret;
-}
-
 void iterated() {
 	int distance(0);
 	cout << endl << " Random walks:";
@@ -168,9 +242,9 @@ void iterated() {
 		if (i == 0) {
 			for (unsigned j = 0; j < candidateHitSet.size(); ++j)
 				minHitSet.push_back(candidateHitSet[j]);
-				minHitSetWeight = candidateWeight;
+			minHitSetWeight = candidateWeight;
 		}
-		distance = candidateHitSet.size()*candidateWeight - minHitSet.size()*minHitSetWeight;
+		distance = candidateHitSet.size() * candidateWeight - minHitSet.size() * minHitSetWeight;
 		if (distance < 0) {
 			minHitSet.clear();
 			minHitSetWeight = candidateWeight;
@@ -324,12 +398,25 @@ void generate_concept_sets() {
 			}
 		}
 	}
+
+	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
+		if (rootConcepts[i]->GetHits() > 0)
+			hittingConcepts.push_back(rootConcepts[i]);
+	}
+	for (unsigned i = 0; i < conceptSets.size(); ++i)
+		if (conceptSets[i].size() == 0) {
+			cout << "ERR empty set" << endl;
+			return;
+		}
+
 	for (unsigned i = 0; i < conceptSets.size(); ++i)
 		setsTouched.push_back(0);
-
+	set_average_weight_hit();
 	cout << "Finding min hitting set" << endl;
-	//find_min_hitset_greedy();
-	iterated();
+
+	sgreedy();
+//find_min_hitset_greedy();
+//iterated();
 //simulated_annealing();
 	cout << "Minimum hitset with " << minHitSet.size() << " members inside." << endl;
 	print_min_hitset();
@@ -470,14 +557,14 @@ void combine_concepts() {
 				insert_candidate(bo, &candidates);
 			}
 
-//TODO Joins excluded
-//			for (conceptIt1 = rootConcepts.begin(); conceptIt1 < rootConcepts.end(); ++conceptIt1) {
-//				if (conceptIt == conceptIt1)
-//					continue;
-//				bo = new Join(*conceptIt, *conceptIt1, preops);
-//				insert_candidate(bo, &candidates);
-//
-//			}
+			//TODO Joins excluded
+			//			for (conceptIt1 = rootConcepts.begin(); conceptIt1 < rootConcepts.end(); ++conceptIt1) {
+			//				if (conceptIt == conceptIt1)
+			//					continue;
+			//				bo = new Join(*conceptIt, *conceptIt1, preops);
+			//				insert_candidate(bo, &candidates);
+			//
+			//			}
 
 			uo = new Not(*conceptIt, &allObjectsIdx, preops);
 			uo->SetLevel(runCount);
@@ -857,19 +944,21 @@ void write_policy() {
 //
 //}
 
-bool testHitSet(){
+bool testHitSet() {
 	vector<int> hindex;
-	for(int i=0;i<minHitSet.size();++i){
+	for (int i = 0; i < minHitSet.size(); ++i) {
 		vector<int> vec = minHitSet[i]->GetHitSetIndexes();
-		for(int j=0;j<vec.size();++j){
-			if(std::find(hindex.begin(), hindex.end(),vec[j])==hindex.end())
+		for (int j = 0; j < vec.size(); ++j) {
+			if (std::find(hindex.begin(), hindex.end(), vec[j]) == hindex.end())
 				hindex.push_back(vec[j]);
 		}
 	}
 
-	sort(hindex.begin(),hindex.end());
-	for(int i=0;i<hindex.size();++i){
-		if(hindex[i]!=i) {
+	if (hindex.size() != conceptSets.size())
+		return false;
+	sort(hindex.begin(), hindex.end());
+	for (int i = 0; i < hindex.size(); ++i) {
+		if (hindex[i] != i) {
 			return false;
 		}
 	}
@@ -897,9 +986,10 @@ int main(int argc, char** argv) {
 	report_interval(t0, tf, cout);
 	cout << endl;
 
-	if(testHitSet())
-		cout<<"HitSet fine"<<endl;
-	else cout<<"ERR HITSET WRONG"<<endl;
+	if (testHitSet())
+		cout << "HitSet fine" << endl;
+	else
+		cout << "ERR HITSET WRONG" << endl;
 	cleanup();
 	return 0;
 }
