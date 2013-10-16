@@ -50,7 +50,8 @@ public:
 
 	inline void SetLevel(int lvl) {
 		this->level = lvl;
-		weight = 10 * lvl;
+		for(int i=0;i<lvl;++i)
+			weight *=2;
 	}
 	virtual ~Operator();
 };
