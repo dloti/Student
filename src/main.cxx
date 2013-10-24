@@ -113,12 +113,7 @@ void set_average_weight_hit() {
 	for (int i = 0; i < hittingConcepts.size(); ++i)
 		avHitWeight += hittingConcepts[i]->GetWeight();
 	avHitWeight /= hittingConcepts.size();
-	cout << "Hitting concepts:" << hittingConcepts.size()
-			<< " Average hit/weight: " << avHitWeight << endl;
-}
-//TODO
-int boltzman() {
-	int cnd;
+	cout << "Hitting concepts:" << hittingConcepts.size() << " Average hit/weight: " << avHitWeight << endl;
 }
 
 vector<int> candidate_sgreedy(double temperature) {
@@ -133,23 +128,27 @@ vector<int> candidate_sgreedy(double temperature) {
 	while (remainingSets > 0) {
 		if (cnt == -1) {
 			cnd = rand() % hittingConcepts.size();
-			double hitWeight = (hittingConcepts[cnd]->GetHits()
-					/ hittingConcepts[cnd]->GetWeight());
-			double proba = uniform_deviate(rand());
-			double ex = exp(-hitWeight / temperature);
-			if (ex <= proba) {
+			double hitWeight = (hittingConcepts[cnd]->GetHits() / hittingConcepts[cnd]->GetWeight());
+			double dist = hitWeight - avHitWeight;
+			if (dist < 0) {
+				double proba = rand();
+				double ex = exp(dist / temperature);
+				if (proba < ex) {
+					continue;
+				}
+			}
+
+			if (find(minHitSet.begin(), minHitSet.end(), hittingConcepts[cnd]) != minHitSet.end())
+				continue;
+
+			if (hittingConcepts[cnd]->GetHits() == 0) {
+				cout << "ERR hitting concepts zero" << endl;
 				continue;
 			}
 
-			if (find(minHitSet.begin(), minHitSet.end(), hittingConcepts[cnd])
-					!= minHitSet.end())
-				continue;
-			if (hittingConcepts[cnd]->GetHits() == 0)
-				continue;
 			candidateHitSet.push_back(hittingConcepts[cnd]);
 			candidateWeight += hittingConcepts[cnd]->GetWeight();
-			vector<int> hitSetIndexes =
-					hittingConcepts[cnd]->GetHitSetIndexes();
+			vector<int> hitSetIndexes = hittingConcepts[cnd]->GetHitSetIndexes();
 			for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
 				if (!st[hitSetIndexes[j]])
 					--remainingSets;
@@ -192,19 +191,20 @@ vector<int> candidate_sgreedy(double temperature) {
 
 void sgreedy() {
 	double alpha = 0.999;
-	double temperature = 200.0;
+	double temperature = 50000.0;
 	double epsilon = 0.001;
 	unsigned steps = 0;
 	find_min_hitset_greedy();
-	cout << endl << " Stochastic greedy: " << minHitSet.size() << " w:"
-			<< minHitSetWeight << " ";
+	cout << endl << " Stochastic greedy: " << minHitSet.size() << " w:" << minHitSetWeight << " ";
 	while (temperature > epsilon) {
 		vector<int> thrown_out = candidate_sgreedy(temperature);
-		if (thrown_out.size() == 0)
+		if (thrown_out.size() == 0) {
+			++steps;
+			temperature *= alpha;
 			continue;
+		}
 
-		if ((candidateHitSet.size() <= minHitSet.size())
-				&& (candidateWeight <= minHitSetWeight)) {
+		if ((candidateHitSet.size() <= minHitSet.size()) && (candidateWeight <= minHitSetWeight)) {
 			for (int j = 0; j < thrown_out.size(); ++j) {
 				minHitSet[j]->SetIsHitting(false);
 			}
@@ -236,8 +236,7 @@ void init_min_hitting_set() {
 	int rnd = 0;
 	while (remainingSets > 0) {
 		rnd = rand() % rootConcepts.size();
-		if (find(concept_idx.begin(), concept_idx.end(), rnd)
-				!= concept_idx.end())
+		if (find(concept_idx.begin(), concept_idx.end(), rnd) != concept_idx.end())
 			continue;
 		if (rootConcepts[rnd]->GetHits() == 0)
 			continue;
@@ -264,8 +263,7 @@ void iterated() {
 				minHitSet.push_back(candidateHitSet[j]);
 			minHitSetWeight = candidateWeight;
 		}
-		distance = candidateHitSet.size() * candidateWeight
-				- minHitSet.size() * minHitSetWeight;
+		distance = candidateHitSet.size() * candidateWeight - minHitSet.size() * minHitSetWeight;
 		if (distance < 0) {
 			minHitSet.clear();
 			minHitSetWeight = candidateWeight;
@@ -307,8 +305,7 @@ void annealGetNext() {
 
 	while (remainingSets > 0) {
 		rnd = rand() % rootConcepts.size();
-		if (find(concept_idx.begin(), concept_idx.end(), rnd)
-				!= concept_idx.end())
+		if (find(concept_idx.begin(), concept_idx.end(), rnd) != concept_idx.end())
 			continue;
 
 		concept_idx.push_back(rnd);
@@ -367,8 +364,7 @@ void find_min_hitset() {
 				for (unsigned k = 0; k < conceptSets[i].size(); ++k) {
 					conceptSets[i][k]->SetIsHitting(true);
 					minHitSet.push_back(conceptSets[i][k]);
-					vector<int> hitSetIndexes =
-							conceptSets[i][k]->GetHitSetIndexes();
+					vector<int> hitSetIndexes = conceptSets[i][k]->GetHitSetIndexes();
 
 					for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
 						if (!setsTouched[hitSetIndexes[j]])
@@ -396,29 +392,25 @@ void generate_concept_sets() {
 	for (unsigned i = 0; i < allStates.size() - 1; ++i) {
 		for (unsigned j = i + 1; j < allStates.size(); ++j) {
 			bool isEmpty = true;
-			if (allStates[i].GetAction().compare(allStates[j].GetAction())
-					!= 0) {
+			if (allStates[i].GetAction().compare(allStates[j].GetAction()) != 0) {
 				conceptSets.push_back(vector<Expression*>());
 				for (unsigned k = 0; k < rootConcepts.size(); ++k) {
 					signature = rootConcepts[k]->GetSignature();
 					if (signature[i] != signature[j]) {
-						if (strcmp(typeid(rootConcepts[k]).name(), "Not")
-								== 0) {
+						if (strcmp(typeid(rootConcepts[k]).name(), "Not") == 0) {
 							cout << "Not out: ";
 							rootConcepts[k]->infix(cout);
 							cout << endl;
 							continue;
 						}
-						conceptSets[conceptSets.size() - 1].push_back(
-								rootConcepts[k]);
+						conceptSets[conceptSets.size() - 1].push_back(rootConcepts[k]);
 						isEmpty = false;
 						rootConcepts[k]->IncHits();
 						rootConcepts[k]->AddHit(conceptSets.size() - 1);
 					}
 				}
 				if (isEmpty)
-					cout << "Empty set: " << i << "," << j << " "
-							<< allStates[i].GetAction() << " "
+					cout << "Empty set: " << i << "," << j << " " << allStates[i].GetAction() << " "
 							<< allStates[j].GetAction() << endl;
 //				cout << "States: " << i << ", " << j << " : " << allStates[i].GetAction() << "-"
 //						<< allStates[j].GetAction() << " size: " << conceptSets[conceptSets.size() - 1].size() << endl;
@@ -445,8 +437,7 @@ void generate_concept_sets() {
 //find_min_hitset_greedy();
 //iterated();
 //simulated_annealing();
-	cout << "Minimum hitset with " << minHitSet.size() << " members inside."
-			<< endl;
+	cout << "Minimum hitset with " << minHitSet.size() << " members inside." << endl;
 	print_min_hitset();
 }
 
@@ -495,8 +486,7 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 	}
 
 	string signature = exp->GetSignature();
-	map<string, vector<Expression*> >::iterator itr = rootDenotMap.find(
-			signature);
+	map<string, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
 	if (itr != rootDenotMap.end()) {
 		if (runCount > -1) {
 			delete exp;
@@ -515,8 +505,7 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 		rootDenotMap[signature] = tmp;
 	}
 
-	map<string, vector<Expression*> >::iterator it = candidateDenotMap.find(
-			signature);
+	map<string, vector<Expression*> >::iterator it = candidateDenotMap.find(signature);
 	if (it != candidateDenotMap.end()) {
 		if (runCount > -1) {
 			delete exp;
@@ -556,8 +545,7 @@ void combine_concepts() {
 		rootConcepts[i]->SetPreops(preops);
 		rootConcepts[i]->SimplifyDenotations();
 		string signature = rootConcepts[i]->GetSignature();
-		map<string, vector<Expression*> >::iterator itr = rootDenotMap.find(
-				signature);
+		map<string, vector<Expression*> >::iterator itr = rootDenotMap.find(signature);
 		if (itr != rootDenotMap.end()) {
 			itr->second.push_back(rootConcepts[i]);
 		} else {
@@ -568,8 +556,7 @@ void combine_concepts() {
 	}
 
 	for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
-		for (roleIt1 = rootRoles.begin(); roleIt1 < rootRoles.end();
-				++roleIt1) {
+		for (roleIt1 = rootRoles.begin(); roleIt1 < rootRoles.end(); ++roleIt1) {
 			if (roleIt == roleIt1)
 				continue;
 			bo = new Equality(*roleIt, *roleIt1, preops);
@@ -578,38 +565,33 @@ void combine_concepts() {
 		}
 	}
 
-	while (hasCandidates) {
+	while (hasCandidates && runCount < 10) {
 		cout << "Concepts: " << rootConcepts.size() << endl;
 		int cnt = 1;
-		for (conceptIt = nextLayer.begin(); conceptIt < nextLayer.end();
-				++conceptIt) {
+		for (conceptIt = nextLayer.begin(); conceptIt < nextLayer.end(); ++conceptIt) {
 
-			for (roleIt = rootRoles.begin(); roleIt < rootRoles.end();
-					++roleIt) {
+			for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
 				bo = new ValueRestriction(*roleIt, *conceptIt, preops);
 				bo->SetLevel(runCount);
 				insert_candidate(bo, &candidates);
 			}
 
 			//TODO Joins excluded
-			//			for (conceptIt1 = rootConcepts.begin(); conceptIt1 < rootConcepts.end(); ++conceptIt1) {
-			//				if (conceptIt == conceptIt1)
-			//					continue;
-			//				bo = new Join(*conceptIt, *conceptIt1, preops);
-			//				insert_candidate(bo, &candidates);
-			//
-			//			}
+//			for (conceptIt1 = rootConcepts.begin(); conceptIt1 < rootConcepts.end(); ++conceptIt1) {
+//				if (conceptIt == conceptIt1)
+//					continue;
+//				bo = new Join(*conceptIt, *conceptIt1, preops);
+//				insert_candidate(bo, &candidates);
+//			}
 
 			uo = new Not(*conceptIt, &allObjectsIdx, preops);
 			uo->SetLevel(runCount);
 			insert_candidate(uo, &candidates);
 			if (++cnt % 10000 == 0)
-				cout << "Evaluated: " << cnt << " concepts from current layer!"
-						<< endl;
+				cout << "Evaluated: " << cnt << " concepts from current layer!" << endl;
 		}
 
-		rootConcepts.insert(rootConcepts.end(), candidates.begin(),
-				candidates.end());
+		rootConcepts.insert(rootConcepts.end(), candidates.begin(), candidates.end());
 		if (candidates.size() == 0)
 			hasCandidates = false;
 		nextLayer = candidates;
@@ -621,8 +603,7 @@ void combine_concepts() {
 }
 
 int get_obj_pos(string object) {
-	int pos = std::find(allObjects.begin(), allObjects.end(), object)
-			- allObjects.begin();
+	int pos = std::find(allObjects.begin(), allObjects.end(), object) - allObjects.begin();
 	if (pos >= allObjects.size()) {
 		cout << "ERR " << object << endl;
 		return -1;
@@ -683,8 +664,7 @@ void get_input() {
 							if (pos > -1)
 								conceptInterpretation.push_back(pos);
 						}
-						s.AddConceptInterpretation(cname,
-								conceptInterpretation);
+						s.AddConceptInterpretation(cname, conceptInterpretation);
 						conceptInterpretation.clear();
 					}
 				}
@@ -722,8 +702,7 @@ void get_input() {
 					}
 				}
 
-				if ((!fin.eof() && i < inst.GetNumActions()
-						&& getline(fin, line))) {
+				if ((!fin.eof() && i < inst.GetNumActions() && getline(fin, line))) {
 					istringstream iss(line);
 					getline(iss, field, ' ');
 					s.SetAction(field);
@@ -824,11 +803,9 @@ void cleanup() {
 
 void initialize() {
 	for (unsigned i = 0; i < rootConcepts.size(); ++i)
-		((ConceptNode*) rootConcepts[i])->UpdateDenotations(instances,
-				&allObjectsIdx);
+		((ConceptNode*) rootConcepts[i])->UpdateDenotations(instances, &allObjectsIdx);
 	for (unsigned i = 0; i < rootRoles.size(); ++i)
-		((RoleNode*) rootRoles[i])->UpdateDenotations(instances,
-				&allObjectsIdx);
+		((RoleNode*) rootRoles[i])->UpdateDenotations(instances, &allObjectsIdx);
 }
 
 void learn_concepts() {
@@ -843,8 +820,7 @@ void make_features() {
 	map<string, Expression*>::iterator cit = candidateFeatures.begin();
 	map<string, Expression*> tmp;
 	for (it = features.begin(); it != features.end(); ++it) {
-		for (cit = candidateFeatures.begin(); cit != candidateFeatures.end();
-				++cit) {
+		for (cit = candidateFeatures.begin(); cit != candidateFeatures.end(); ++cit) {
 			bo = new Join((*it).second, (*cit).second, preops);
 			string signature = bo->GetSignature();
 			if (bo->GetNonEmptyDenotationNum() == 0) {
@@ -897,8 +873,7 @@ void write_policy() {
 		for (unsigned k = 0; k < instances[j].GetStates()->size(); ++k) {
 			for (unsigned l = 0; l < actions.size(); ++l) {
 				if (actions[l].compare(instances[j][k].GetAction()) == 0) {
-					if (j == instances.size() - 1
-							&& k == instances[j].GetStates()->size() - 1)
+					if (j == instances.size() - 1 && k == instances[j].GetStates()->size() - 1)
 						fout << l;
 					else
 						fout << l << " ";
