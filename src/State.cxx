@@ -10,6 +10,7 @@
 State::State() {
 	type = 1;
 	number = 0;
+	action_num=-1;
 	covered = false;
 }
 

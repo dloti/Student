@@ -23,6 +23,7 @@
 #include "Rule.hxx"
 #include "PreOps.hxx"
 #include "ActionDenotations.hxx"
+#include "Policy.hxx"
 
 namespace mn {
 using namespace std;
@@ -705,7 +706,7 @@ void get_input() {
 				if ((!fin.eof() && i < inst.GetNumActions() && getline(fin, line))) {
 					istringstream iss(line);
 					getline(iss, field, ' ');
-					s.SetAction(field);
+					s.SetAction(field, actions);
 					s.SetNumState(i);
 					inst.AddState(s);
 				} else if (i == inst.GetNumActions()) {
@@ -853,6 +854,7 @@ void make_features() {
 		candidateFeatures[(*fnd).second->GetSignature()] = (*fnd).second;
 }
 void write_policy() {
+	Policy* p = new Policy(minHitSet,instances);
 	ofstream fout;
 	fout.open("policy.txt");
 	for (unsigned i = 0; i < primitiveConcepts.size(); ++i)

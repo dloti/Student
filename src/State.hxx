@@ -16,6 +16,7 @@ class State {
 	std::map<std::string, std::vector<int> > conceptInterpretation;
 	std::map<std::string, std::vector<std::pair<int, int> > > roleInterpretation;
 	std::string action;
+	int action_num;
 	bool covered;
 public:
 	State();
@@ -48,8 +49,14 @@ public:
 		return (type == 2);
 	}
 
-	inline void SetAction(std::string a) {
+	inline void SetAction(std::string a, std::vector<std::string> actions) {
 		action = a;
+		for(int i=0;i<actions.size();++i){
+			if(actions[i].compare(a)==0){
+				action_num = i;
+				break;
+			}
+		}
 	}
 
 	inline void Covered() {
@@ -62,6 +69,10 @@ public:
 
 	inline std::string GetAction() {
 		return action;
+	}
+
+	inline int GetActionNum() {
+		return action_num;
 	}
 
 	void Print(std::vector<std::string> allObjects);

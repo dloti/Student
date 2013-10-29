@@ -46,6 +46,7 @@ public:
 	inline int GetNumActions() {
 		return numActions;
 	}
+	std::vector<int> GetPlanNums();
 	State& operator[](const int nIndex);
 };
 
