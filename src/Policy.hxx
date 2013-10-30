@@ -21,9 +21,16 @@
 using namespace expression;
 class Policy {
 	std::map<std::string,int> policy;
+	std::map<std::string,int> minimalPolicy;
 	std::vector<int> actions;
+
+	bool isValidSignature(std::string signature, int action);
+	bool goesToDifferentAction(std::string signature, int action, std::string signature1, int action1);
 public:
 	Policy(std::vector<Expression*> minHitSet, std::vector<Instance> instances);
+	void MinimizePolicy();
+	void Print();
+	void PrintMinimalPolicy();
 };
 
 #endif /* POLICY_HXX_ */

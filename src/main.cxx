@@ -855,6 +855,12 @@ void make_features() {
 }
 void write_policy() {
 	Policy* p = new Policy(minHitSet,instances);
+	p->MinimizePolicy();
+	p->Print();
+	p->PrintMinimalPolicy();
+
+
+
 	ofstream fout;
 	fout.open("policy.txt");
 	for (unsigned i = 0; i < primitiveConcepts.size(); ++i)
