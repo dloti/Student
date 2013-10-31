@@ -153,7 +153,7 @@ vector<int> candidate_sgreedy(double temperature) {
 			for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
 				if (!st[hitSetIndexes[j]])
 					--remainingSets;
-				st[hitSetIndexes[j]] += 1;
+				++st[hitSetIndexes[j]];
 			}
 			++cnt;
 			cnd = -1;
@@ -187,6 +187,21 @@ vector<int> candidate_sgreedy(double temperature) {
 	}
 	if (remainingSets > 0)
 		thrown_out.clear();
+	else{
+		vector<int> purge;
+		vector<Expression*> tmp;
+		for(int i=0;i<candidateHitSet.size();++i){
+			vector<int> hitSetIndexes = candidateHitSet[i]->GetHitSetIndexes();
+			bool subsumed = true;
+			for(int j=0;j<hitSetIndexes.size();++j){
+				if(st[hitSetIndexes[j]]<2)
+					subsumed=false;
+			}
+			if(!subsumed)
+				tmp.push_back(candidateHitSet[i]);
+		}
+		candidateHitSet = tmp;
+	}
 	return thrown_out;
 }
 

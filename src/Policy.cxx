@@ -19,11 +19,15 @@ Policy::Policy(std::vector<Expression*> minHitSet, std::vector<Instance> instanc
 		signatures.push_back(minHitSet[i]->GetSignature());
 	}
 
+	std::cout<<"Full policy:"<<std::endl;
 	for (unsigned i = 0; i < signatures[0].size(); ++i) {
 		std::string signature = "";
 		for (unsigned j = 0; j < signatures.size(); ++j) {
 			signature += signatures[j][i];
 		}
+		std::cout<<signature<<":"<<actions[i]<<std::endl;
+		if(policy.find(signature)!=policy.end() && policy[signature] != actions[i])
+			std::cout<<"ERR policy not correct!"<<std::endl;
 		policy[signature] = actions[i];
 	}
 }
@@ -42,7 +46,7 @@ void Policy::PrintMinimalPolicy() {
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
 }
-bool isSignatureMatch(std::string signature, std::string signature1) {
+bool Policy::isSignatureMatch(std::string signature, std::string signature1) {
 	for (int i = 0; i < signature.length(); ++i) {
 		if (signature[i] == signature1[i])
 			continue;
@@ -71,13 +75,13 @@ bool Policy::isValidSignature(std::string signature, int action) {
 	return true;
 }
 void Policy::MakeDecisionList() {
-	std::vector<std::string, int> coverage_vec;
-	std::map<std::string, int>::iterator it;
-	for (it = minimalPolicy.begin(); it != minimalPolicy.end(); ++it) {
-		for(int i=0;i<minHitSet.size();++i){
-
-		}
-	}
+//	std::vector<> coverage_vec;
+//	std::map<std::string, int>::iterator it;
+//	for (it = minimalPolicy.begin(); it != minimalPolicy.end(); ++it) {
+//		for(int i=0;i<minHitSet.size();++i){
+//
+//		}
+//	}
 }
 
 void Policy::MinimizePolicy() {
