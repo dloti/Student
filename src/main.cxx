@@ -101,12 +101,37 @@ void find_min_hitset_greedy() {
 			continue;
 		if (hittingConcepts[conc]->IsHitting())
 			continue;
+
 		hittingConcepts[conc]->SetIsHitting(true);
 		minHitSet.push_back(hittingConcepts[conc]);
 		minHitSetWeight += hittingConcepts[conc]->GetWeight();
 		remainingSets -= hit_sets(hittingConcepts[conc]);
 		conc++;
 	}
+
+	vector<Expression*> tmp;
+	for (int i = 0; i < minHitSet.size(); ++i) {
+		vector<int> hitSetIndexes = minHitSet[i]->GetHitSetIndexes();
+		bool subsumed = true;
+
+		for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
+			if (setsTouched[hitSetIndexes[j]] < 2) {
+				subsumed = false;
+			}
+		}
+		if (!subsumed)
+			tmp.push_back(minHitSet[i]);
+		else {
+			hittingConcepts[i]->SetIsHitting(false);
+			minHitSetWeight -= hittingConcepts[i]->GetWeight();
+			for (unsigned j = 0; j < hitSetIndexes.size(); ++j) {
+				setsTouched[hitSetIndexes[j]]--;
+			}
+		}
+	}
+
+	minHitSet.clear();
+	minHitSet = tmp;
 }
 
 void set_average_weight_hit() {
@@ -187,21 +212,6 @@ vector<int> candidate_sgreedy(double temperature) {
 	}
 	if (remainingSets > 0)
 		thrown_out.clear();
-	else{
-		vector<int> purge;
-		vector<Expression*> tmp;
-		for(int i=0;i<candidateHitSet.size();++i){
-			vector<int> hitSetIndexes = candidateHitSet[i]->GetHitSetIndexes();
-			bool subsumed = true;
-			for(int j=0;j<hitSetIndexes.size();++j){
-				if(st[hitSetIndexes[j]]<2)
-					subsumed=false;
-			}
-			if(!subsumed)
-				tmp.push_back(candidateHitSet[i]);
-		}
-		candidateHitSet = tmp;
-	}
 	return thrown_out;
 }
 
@@ -869,14 +879,16 @@ void make_features() {
 		candidateFeatures[(*fnd).second->GetSignature()] = (*fnd).second;
 }
 void write_policy() {
-	Policy* p = new Policy(minHitSet,instances);
-	p->MinimizePolicy();
-	p->Print();
-	p->PrintMinimalPolicy();
-
-
-
 	ofstream fout;
+	fout.open("decision_list.txt");
+	Policy* p = new Policy(minHitSet, instances);
+	p->MinimizePolicy();
+	p->PrintMinimalPolicy();
+	p->MakeDecisionList();
+	p->PrintDecisionList(fout);
+	fout.flush();
+	fout.close();
+
 	fout.open("policy.txt");
 	for (unsigned i = 0; i < primitiveConcepts.size(); ++i)
 		fout << primitiveConcepts[i] << " ";
