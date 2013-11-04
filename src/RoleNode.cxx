@@ -10,7 +10,7 @@ namespace expression {
 RoleNode::RoleNode() {
 }
 
-RoleNode::RoleNode(std::string predicate) {
+RoleNode::RoleNode(std::string predicate):Operand(){
 	this->predicate = predicate;
 }
 

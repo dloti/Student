@@ -32,7 +32,7 @@ void ValueRestriction::UpdateDenotations() {
 	std::vector<std::vector<std::pair<int, int> > > rDenot = this->left->GetDenotationRoleVec();
 	std::vector<std::vector<int> > cDenot = this->right->GetDenotationVec();
 	if (cDenot.size() != rDenot.size()) {
-		std::cout << "ERR Value restriction";
+		std::cout << "ERR Value restriction size mismatch:"<<rDenot.size()<<" "<<cDenot.size()<<std::endl;
 		return;
 	}
 
@@ -78,7 +78,8 @@ void ValueRestriction::UpdateSimpleDenotations() {
 	std::vector<std::vector<std::pair<int, int> > > rDenot = this->left->GetDenotationRoleVec();
 	std::vector<int>* cDenot = this->right->GetSimpleDenotationVec();
 	if (cDenot->size() != rDenot.size()) {
-		std::cout << "ERR Value restriction";
+		std::cout << "ERR Value restriction size mismatch:"<<rDenot.size()<<" "<<cDenot->size();
+		right->infix(std::cout); std::cout<<std::endl;
 		return;
 	}
 

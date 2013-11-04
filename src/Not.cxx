@@ -20,8 +20,6 @@ std::vector<int>* Not::GetInterpretation() {
 	return &(this->interpretation);
 }
 void Not::UpdateDenotations() {
-	if (typeid(*child) == typeid(Not))
-		return;
 	std::vector<std::vector<int> > cDenot = this->child->GetDenotationVec();
 	std::vector<int> tmpInterpretation;
 	for (unsigned i = 0; i < cDenot.size(); ++i) {
@@ -41,8 +39,6 @@ void Not::UpdateDenotations() {
 }
 
 void Not::UpdateSimpleDenotations() {
-	if (typeid(*child) == typeid(Not))
-		return;
 	std::vector<int>* cDenot = this->child->GetSimpleDenotationVec();
 	std::map<int, int>* notMap = preops->GetNotMap();
 	for (unsigned i = 0; i < cDenot->size(); ++i) {

@@ -90,12 +90,16 @@ bool Policy::moreCorrect(std::pair<std::string, int> p, std::pair<std::string, i
 void Policy::MakeDecisionList() {
 	std::vector<std::pair<std::string, int> > coverage_vec;
 	std::map<std::string, int>::iterator it;
+	std::map<std::string,int> coveredSignatures;
 	for (it = minimalPolicy.begin(); it != minimalPolicy.end(); ++it) {
 		int correct = 0;
 		for (int i = 0; i < stateSignatures.size(); ++i) {
 			if (isSignatureMatch(it->first, stateSignatures[i].first)) {
-				if (it->second == stateSignatures[i].second)
+				if (it->second == stateSignatures[i].second &&
+						coveredSignatures.find(it->first)== coveredSignatures.end()){
 					++correct;
+					coveredSignatures[it->first] = 1;
+				}
 			}
 		}
 		std::pair<std::string, int> p(it->first, correct);

@@ -8,7 +8,7 @@
 #include "ConceptNode.hxx"
 #include <algorithm>
 namespace expression {
-ConceptNode::ConceptNode() {
+ConceptNode::ConceptNode():Operand() {
 	this->goal = false;
 	this->predicate = "";
 }
