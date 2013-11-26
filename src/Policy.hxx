@@ -34,7 +34,7 @@ class Policy {
 	bool goesToDifferentAction(std::string signature, int action, std::string signature1, int action1);
 
 public:
-	Policy(std::vector<Expression*> minHitSet, std::vector<Instance> instances);
+	Policy(std::vector<Expression*> minHitSet, std::vector<Instance> instances,  std::vector<int> significantObjects);
 	void MinimizePolicy();
 	void MakeDecisionList();
 	void Print();

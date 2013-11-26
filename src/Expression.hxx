@@ -27,6 +27,7 @@ protected:
 	bool isHitting;
 	unsigned weight;
 	std::string signature;
+	std::string significantObjectSignature;
 	std::vector<int> hitSetIndexes;
 	std::vector<int> simpleDenotations;
 	std::vector<std::vector<int> > denotations;
@@ -66,6 +67,58 @@ public:
 		return this->nonEmptyDenot;
 	}
 
+	inline std::string GetSignificantObjectSignature(
+			std::vector<int>* significantObjects) {
+		if (this->significantObjectSignature.length() != 0)
+			return this->significantObjectSignature;
+		std::string ret;
+		if (simpleDenotations.size() == 0) {
+			this->SimplifyDenotations();
+		}
+		for (unsigned i = 0; i < simpleDenotations.size(); ++i) {
+			if ((*significantObjects)[i] < 0) {
+				if (simpleDenotations[i])
+					ret += "1";
+				else
+					ret += "0";
+				continue;
+			}
+			if (simpleDenotations[i]) {
+				if (preops->IsObjectInSubset(simpleDenotations[i],
+						(*significantObjects)[i]))
+					ret += "1";
+				else
+					ret += "0";
+			} else
+				ret += "0";
+		}
+		significantObjectSignature = ret;
+		return significantObjectSignature;
+	}
+
+	inline std::string GetSignificantObjectSign(int example_num, int obj) {
+		if (simpleDenotations.size() == 0) {
+			this->SimplifyDenotations();
+		}
+		if(example_num>=simpleDenotations.size()){
+			std::cout<<"ERR example number is "<<example_num<<" denotation size is "<<simpleDenotations.size()<<std::endl;
+		}
+			if (obj < 0) {
+				std::cout<<"Object error!"<<std::endl;
+				if (simpleDenotations[example_num])
+					return "1";
+				else
+					return "0";
+			}
+			if (simpleDenotations[example_num]) {
+				if (preops->IsObjectInSubset(simpleDenotations[example_num],obj))
+					return "1";
+				else
+					return "0";
+			} else
+				return "0";
+	}
+
 	inline std::string GetSignature() {
 		if (this->signature.length() != 0)
 			return this->signature;
@@ -84,7 +137,8 @@ public:
 				ret += "1";
 			else
 				ret += "0";
-		return ret;
+		signature = ret;
+		return signature;
 	}
 
 	inline std::vector<std::vector<int> > GetDenotationVec() {
@@ -115,6 +169,12 @@ public:
 
 	inline int GetHits() {
 		return hitSets;
+	}
+
+	inline void ClearHits() {
+		hitSetIndexes.clear();
+		hitSets = 0;
+		isHitting = false;
 	}
 
 	inline std::vector<int> GetHitSetIndexes() {

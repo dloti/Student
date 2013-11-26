@@ -20,6 +20,7 @@ public:
 	virtual ~Instance();
 	inline void AddState(State s) {
 		states.push_back(s);
+
 	}
 	inline void SetGoal(State s) {
 		s.SetGoal();
@@ -46,6 +47,7 @@ public:
 	inline int GetNumActions() {
 		return numActions;
 	}
+	std::vector<int> GetSignificantObjects();
 	std::vector<int> GetPlanNums();
 	State& operator[](const int nIndex);
 };

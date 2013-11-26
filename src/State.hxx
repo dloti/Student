@@ -16,6 +16,7 @@ class State {
 	std::map<std::string, std::vector<int> > conceptInterpretation;
 	std::map<std::string, std::vector<std::pair<int, int> > > roleInterpretation;
 	std::string action;
+	int significantObject;
 	int action_num;
 	bool covered;
 public:
@@ -58,6 +59,14 @@ public:
 			}
 		}
 	}
+
+	inline void SetSignificantObject(int object) {
+		this->significantObject = object;
+		}
+
+	inline int GetSignificantObject() {
+			return this->significantObject;
+			}
 
 	inline void Covered() {
 		covered = true;
