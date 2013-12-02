@@ -42,6 +42,8 @@ map<string, Expression*> candidateFeatures;
 unsigned candidateWeight(0), minHitSetWeight(0);
 vector<vector<int> > subsets;
 double avHitWeight(0);
+vector<int> significantObjects;
+map<string, int> significantObjectIdx;
 
 vector<Expression*> rootConcepts;
 vector<Expression*> rootRoles;
@@ -110,7 +112,7 @@ void find_min_hitset_greedy() {
 	}
 
 	vector<Expression*> tmp;
-	for (int i = 0; i < minHitSet.size(); ++i) {
+	for (unsigned i = 0; i < minHitSet.size(); ++i) {
 		vector<int> hitSetIndexes = minHitSet[i]->GetHitSetIndexes();
 		bool subsumed = true;
 
@@ -237,7 +239,7 @@ void sgreedy() {
 
 		if ((candidateHitSet.size() <= minHitSet.size())
 				&& (candidateWeight <= minHitSetWeight)) {
-			for (int j = 0; j < thrown_out.size(); ++j) {
+			for (unsigned j = 0; j < thrown_out.size(); ++j) {
 				minHitSet[j]->SetIsHitting(false);
 			}
 
@@ -356,7 +358,9 @@ void generate_concept_sets() {
 					!= 0) {
 				conceptSets.push_back(vector<Expression*>());
 				for (unsigned k = 0; k < filteredExpressions.size(); ++k) {
-					signature = filteredExpressions[k]->GetSignature();
+					signature =
+							filteredExpressions[k]->GetSignificantObjectSignature(
+									&significantObjects);
 
 					if (signature[i] != signature[j]) {
 
@@ -374,12 +378,21 @@ void generate_concept_sets() {
 						filteredExpressions[k]->AddHit(conceptSets.size() - 1);
 					}
 				}
-				if (isEmpty)
+				if (isEmpty) {
 					cout << "Empty set: " << i << "," << j << " "
-							<< allStates[i].GetAction() << " "
-							<< allStates[j].GetAction() << endl;
+							<< allStates[i].GetAction() << " ";
+					allStates[i].Print(allObjects);
+					cout << endl;
+					cout << allStates[j].GetAction() << " ";
+					allStates[j].Print(allObjects);
+					cout << endl;
+					for (unsigned si = 0; si < significantObjects.size(); ++si)
+						cout << significantObjects[si] << " ";
+					return;
 //				cout << "States: " << i << ", " << j << " : " << allStates[i].GetAction() << "-"
 //						<< allStates[j].GetAction() << " size: " << conceptSets[conceptSets.size() - 1].size() << endl;
+					//return;
+				}
 			}
 		}
 	}
@@ -499,83 +512,83 @@ inline void insert_candidate(Operator* exp, vector<Expression*>* candidates) {
 		cout << "Candidates: " << candidates->size() << endl;
 }
 
-void combine_concepts() {
-	vector<Expression*>::iterator conceptIt, conceptIt1, roleIt, roleIt1;
-	vector<Expression*> candidates;
-	vector<Expression*> nextLayer = rootConcepts;
-	UnaryOperator* uo;
-	BinaryOperator* bo;
-
-	bool hasCandidates = true;
-	denotationSize = rootConcepts[0]->GetDenotationVec().size();
-	cout << "Denotation size: " << denotationSize << endl;
-
-	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
-		rootConcepts[i]->SetPreops(preops);
-		rootConcepts[i]->SimplifyDenotations();
-		string signature = rootConcepts[i]->GetSignature();
-		map<string, vector<Expression*> >::iterator itr = rootDenotMap.find(
-				signature);
-		if (itr != rootDenotMap.end()) {
-			itr->second.push_back(rootConcepts[i]);
-		} else {
-			vector<Expression*> tmp;
-			tmp.push_back(rootConcepts[i]);
-			rootDenotMap[signature] = tmp;
-		}
-	}
-
-	for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
-		for (roleIt1 = rootRoles.begin(); roleIt1 < rootRoles.end();
-				++roleIt1) {
-			if (roleIt == roleIt1)
-				continue;
-			bo = new Equality(*roleIt, *roleIt1, preops);
-			bo->SetLevel(1);
-			insert_candidate(bo, &candidates);
-		}
-	}
-
-	while (hasCandidates && runCount < 10) {
-		cout << "Concepts: " << rootConcepts.size() << endl;
-		int cnt = 1;
-		for (conceptIt = nextLayer.begin(); conceptIt < nextLayer.end();
-				++conceptIt) {
-
-			for (roleIt = rootRoles.begin(); roleIt < rootRoles.end();
-					++roleIt) {
-				bo = new ValueRestriction(*roleIt, *conceptIt, preops);
-				bo->SetLevel(runCount);
-				insert_candidate(bo, &candidates);
-			}
-
-			//TODO Joins excluded
-//			for (conceptIt1 = rootConcepts.begin(); conceptIt1 < rootConcepts.end(); ++conceptIt1) {
-//				if (conceptIt == conceptIt1)
-//					continue;
-//				bo = new Join(*conceptIt, *conceptIt1, preops);
+//void combine_concepts() {
+//	vector<Expression*>::iterator conceptIt, conceptIt1, roleIt, roleIt1;
+//	vector<Expression*> candidates;
+//	vector<Expression*> nextLayer = rootConcepts;
+//	UnaryOperator* uo;
+//	BinaryOperator* bo;
+//
+//	bool hasCandidates = true;
+//	denotationSize = rootConcepts[0]->GetDenotationVec().size();
+//	cout << "Denotation size: " << denotationSize << endl;
+//
+//	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
+//		rootConcepts[i]->SetPreops(preops);
+//		rootConcepts[i]->SimplifyDenotations();
+//		string signature = rootConcepts[i]->GetSignature();
+//		map<string, vector<Expression*> >::iterator itr = rootDenotMap.find(
+//				signature);
+//		if (itr != rootDenotMap.end()) {
+//			itr->second.push_back(rootConcepts[i]);
+//		} else {
+//			vector<Expression*> tmp;
+//			tmp.push_back(rootConcepts[i]);
+//			rootDenotMap[signature] = tmp;
+//		}
+//	}
+//
+//	for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
+//		for (roleIt1 = rootRoles.begin(); roleIt1 < rootRoles.end();
+//				++roleIt1) {
+//			if (roleIt == roleIt1)
+//				continue;
+//			bo = new Equality(*roleIt, *roleIt1, preops);
+//			bo->SetLevel(1);
+//			insert_candidate(bo, &candidates);
+//		}
+//	}
+//
+//	while (hasCandidates && runCount < 10) {
+//		cout << "Concepts: " << rootConcepts.size() << endl;
+//		int cnt = 1;
+//		for (conceptIt = nextLayer.begin(); conceptIt < nextLayer.end();
+//				++conceptIt) {
+//
+//			for (roleIt = rootRoles.begin(); roleIt < rootRoles.end();
+//					++roleIt) {
+//				bo = new ValueRestriction(*roleIt, *conceptIt, preops);
+//				bo->SetLevel(runCount);
 //				insert_candidate(bo, &candidates);
 //			}
-
-			uo = new Not(*conceptIt, &allObjectsIdx, preops);
-			uo->SetLevel(runCount);
-			insert_candidate(uo, &candidates);
-			if (++cnt % 10000 == 0)
-				cout << "Evaluated: " << cnt << " concepts from current layer!"
-						<< endl;
-		}
-
-		rootConcepts.insert(rootConcepts.end(), candidates.begin(),
-				candidates.end());
-		if (candidates.size() == 0)
-			hasCandidates = false;
-		nextLayer = candidates;
-		candidates.clear();
-		candidateDenotMap.clear();
-		++runCount;
-		cout << "Pass: " << runCount << endl;
-	}
-}
+//
+//			//TODO Joins excluded
+////			for (conceptIt1 = rootConcepts.begin(); conceptIt1 < rootConcepts.end(); ++conceptIt1) {
+////				if (conceptIt == conceptIt1)
+////					continue;
+////				bo = new Join(*conceptIt, *conceptIt1, preops);
+////				insert_candidate(bo, &candidates);
+////			}
+//
+//			uo = new Not(*conceptIt, &allObjectsIdx, preops);
+//			uo->SetLevel(runCount);
+//			insert_candidate(uo, &candidates);
+//			if (++cnt % 10000 == 0)
+//				cout << "Evaluated: " << cnt << " concepts from current layer!"
+//						<< endl;
+//		}
+//
+//		rootConcepts.insert(rootConcepts.end(), candidates.begin(),
+//				candidates.end());
+//		if (candidates.size() == 0)
+//			hasCandidates = false;
+//		nextLayer = candidates;
+//		candidates.clear();
+//		candidateDenotMap.clear();
+//		++runCount;
+//		cout << "Pass: " << runCount << endl;
+//	}
+//}
 
 bool valid_signature(string signature) {
 	for (int i = 0; i < signature.size(); ++i)
@@ -599,7 +612,8 @@ void negate_concepts() {
 			level = ((Operator*) (*it))->GetLevel();
 		uo->SetLevel(level + 1);
 		candidates.push_back(uo);
-		if (!valid_signature(uo->GetSignature())) {
+		if (!valid_signature(
+				uo->GetSignificantObjectSignature(&significantObjects))) {
 			cout << "ERR signature wrong ";
 			uo->infix(cout);
 			cout << endl;
@@ -624,7 +638,8 @@ void value_restriction() {
 			bo->SetLevel(level + 1);
 			bo->SimplifyDenotations();
 			candidates.push_back(bo);
-			if (!valid_signature(bo->GetSignature())) {
+			if (!valid_signature(
+					bo->GetSignificantObjectSignature(&significantObjects))) {
 				cout << "ERR signature wrong ";
 				bo->infix(cout);
 				cout << endl;
@@ -638,20 +653,21 @@ void value_restriction() {
 void syntax_concepts() {
 	vector<Expression*>::iterator conceptIt, conceptIt1, roleIt, roleIt1;
 	vector<Expression*> candidates;
-	UnaryOperator* uo;
 	BinaryOperator* bo;
 
 	//Preops init
 	for (unsigned i = 0; i < rootConcepts.size(); ++i) {
 		rootConcepts[i]->SetPreops(preops);
 		rootConcepts[i]->SimplifyDenotations();
-		if (!valid_signature(rootConcepts[i]->GetSignature())) {
+		if (!valid_signature(
+				rootConcepts[i]->GetSignificantObjectSignature(
+						&significantObjects))) {
 			cout << "ERR signature wrong ";
 			rootConcepts[i]->infix(cout);
 			cout << endl;
 		}
 	}
-	cout<<"Size: "<<rootConcepts.size()<<endl;
+	cout << "Size: " << rootConcepts.size() << endl;
 
 	//Combine roles
 	for (roleIt = rootRoles.begin(); roleIt < rootRoles.end(); ++roleIt) {
@@ -663,7 +679,8 @@ void syntax_concepts() {
 			bo->SetLevel(2);
 			bo->SimplifyDenotations();
 			candidates.push_back(bo);
-			if (!valid_signature(bo->GetSignature())) {
+			if (!valid_signature(
+					bo->GetSignificantObjectSignature(&significantObjects))) {
 				cout << "ERR signature wrong ";
 				bo->infix(cout);
 				cout << endl;
@@ -673,15 +690,15 @@ void syntax_concepts() {
 	rootConcepts.insert(rootConcepts.end(), candidates.begin(),
 			candidates.end());
 	candidates.clear();
-	cout<<"Size after equality: "<<rootConcepts.size()<<endl;
+	cout << "Size after equality: " << rootConcepts.size() << endl;
 	negate_concepts();
-	cout<<"Size after negation: "<<rootConcepts.size()<<endl;
+	cout << "Size after negation: " << rootConcepts.size() << endl;
 	value_restriction();
-	cout<<"Size after val. restriction: "<<rootConcepts.size()<<endl;
+	cout << "Size after val. restriction: " << rootConcepts.size() << endl;
 	negate_concepts();
-	cout<<"Size after negation: "<<rootConcepts.size()<<endl;
+	cout << "Size after negation: " << rootConcepts.size() << endl;
 	value_restriction();
-	cout<<"Size after val. restriction: "<<rootConcepts.size()<<endl;
+	cout << "Size after val. restriction: " << rootConcepts.size() << endl;
 	cout << "Total concepts generated: " << rootConcepts.size() << endl;
 }
 
@@ -695,6 +712,13 @@ int get_obj_pos(string object) {
 		return pos;
 }
 
+int resolve_object(string object) {
+        for (int i = 0; i < allObjects.size(); ++i)
+                if (allObjects[i].compare(object) == 0)
+                        return i;
+        cout << "ERR: Object not found in allOBjects array";
+        return -1;
+}
 void get_input() {
 	string line;
 	string field;
@@ -712,6 +736,12 @@ void get_input() {
 					allObjects.push_back(field);
 				} else if (i == 3) {
 					actions.push_back(field);
+				} else if (i > 3) {
+					string tmp;
+					int action_num = -1;
+					getline(fin, tmp);
+					std::istringstream(tmp) >> action_num;
+					significantObjectIdx[line] = action_num;
 				}
 			}
 			i++;
@@ -787,21 +817,47 @@ void get_input() {
 					}
 				}
 
-				if ((!fin.eof() && i < inst.GetNumActions()
-						&& getline(fin, line))) {
-					istringstream iss(line);
-					getline(iss, field, ' ');
-					s.SetAction(field, actions);
-					s.SetNumState(i);
-					inst.AddState(s);
-				} else if (i == inst.GetNumActions()) {
-					inst.SetGoal(s);
-				}
-			}
+                if ((!fin.eof() && i < inst.GetNumActions()
+                                && getline(fin, line))) {
+                        istringstream iss(line);
+                        getline(iss, field, ' ');
+                        s.SetAction(field, actions);
+                        s.SetNumState(i);
+
+                        cout << "Objects:";
+                        int objectIdx = significantObjectIdx[field];
+                        s.SetSignificantObject(-1);
+                        int sig_counter = 0;
+
+                        while (getline(iss, field, ' ') && objectIdx >= sig_counter) {
+                                cout << " " << resolve_object(field) << " "
+                                                << allObjects[resolve_object(field)];
+                                s.SetSignificantObject(resolve_object(field));
+                                ++sig_counter;
+                        }
+                        cout << endl;
+                        inst.AddState(s);
+                } else if (i == inst.GetNumActions()) {
+                        inst.SetGoal(s);
+                }
+        }
 			instances.push_back(inst);
 		}
 	}
 	fin.close();
+	for (unsigned i = 0; i < instances.size(); ++i) {
+		vector<int> v = instances[i].GetSignificantObjects();
+		for (unsigned j = 0; j < v.size(); ++j){
+			cout<<v[j]<<" ";
+			if (v[j] < 0) {
+				cout << "ERR significant objects not read correctly!" <<v[j]<< endl;
+				exit(0);
+			}
+		}
+		cout<<endl;
+		significantObjects.insert(significantObjects.end(), v.begin(), v.end());
+	}
+
 }
 
 void printout() {
@@ -914,7 +970,8 @@ void make_features() {
 		for (cit = candidateFeatures.begin(); cit != candidateFeatures.end();
 				++cit) {
 			bo = new Join((*it).second, (*cit).second, preops);
-			string signature = bo->GetSignature();
+			string signature = bo->GetSignificantObjectSignature(
+					&significantObjects);
 			if (bo->GetNonEmptyDenotationNum() == 0) {
 				delete bo;
 				continue;
@@ -942,12 +999,13 @@ void make_features() {
 	candidateFeatures.clear();
 	cout << "temp size " << tmp.size() << endl;
 	for (fnd = tmp.begin(); fnd != tmp.end(); ++fnd)
-		candidateFeatures[(*fnd).second->GetSignature()] = (*fnd).second;
+		candidateFeatures[(*fnd).second->GetSignificantObjectSignature(
+				&significantObjects)] = (*fnd).second;
 }
 void write_policy() {
 	ofstream fout;
 	fout.open("decision_list.txt");
-	Policy* p = new Policy(minHitSet, instances);
+	Policy* p = new Policy(minHitSet, instances, significantObjects);
 	p->MinimizePolicy();
 	p->PrintMinimalPolicy();
 	p->MakeDecisionList();
@@ -965,7 +1023,9 @@ void write_policy() {
 	for (unsigned i = 0; i < minHitSet.size(); ++i) {
 		minHitSet[i]->prefix(fout);
 		fout << endl;
-		fout << minHitSet[i]->GetSignature();
+		fout
+				<< minHitSet[i]->GetSignificantObjectSignature(
+						&significantObjects);
 		fout << endl;
 	}
 	fout.close();
@@ -1066,7 +1126,7 @@ void write_policy() {
 
 bool testHitSet() {
 	vector<int> hindex;
-	for (int i = 0; i < minHitSet.size(); ++i) {
+	for (unsigned i = 0; i < minHitSet.size(); ++i) {
 		vector<int> vec = minHitSet[i]->GetHitSetIndexes();
 		for (int j = 0; j < vec.size(); ++j) {
 			if (std::find(hindex.begin(), hindex.end(), vec[j]) == hindex.end())
@@ -1077,7 +1137,7 @@ bool testHitSet() {
 	if (hindex.size() != conceptSets.size())
 		return false;
 	sort(hindex.begin(), hindex.end());
-	for (int i = 0; i < hindex.size(); ++i) {
+	for (unsigned i = 0; i < hindex.size(); ++i) {
 		if (hindex[i] != i) {
 			return false;
 		}
@@ -1095,7 +1155,9 @@ void debug_output() {
 				<< rootConcepts[i]->GetWeight() << " ratio:"
 				<< rootConcepts[i]->GetHits() / rootConcepts[i]->GetWeight();
 		fout << endl;
-		fout << rootConcepts[i]->GetSignature() << endl;
+		fout
+				<< rootConcepts[i]->GetSignificantObjectSignature(
+						&significantObjects) << endl;
 	}
 	fout.flush();
 	fout.close();

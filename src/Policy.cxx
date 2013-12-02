@@ -7,8 +7,9 @@
 
 #include "Policy.hxx"
 
-Policy::Policy(std::vector<Expression*> minHitSet, std::vector<Instance> instances) {
+Policy::Policy(std::vector<Expression*> minHitSet, std::vector<Instance> instances, std::vector<int> significantObjects) {
 	this->minHitSet = minHitSet;
+	this->significantObjects = significantObjects;
 	for (unsigned i = 0; i < instances.size(); ++i) {
 		std::vector<int> plan = instances[i].GetPlanNums();
 		actions.insert(actions.end(), plan.begin(), plan.end());
@@ -16,7 +17,7 @@ Policy::Policy(std::vector<Expression*> minHitSet, std::vector<Instance> instanc
 
 	std::vector<std::string> signatures;
 	for (unsigned i = 0; i < minHitSet.size(); ++i) {
-		signatures.push_back(minHitSet[i]->GetSignature());
+		signatures.push_back(minHitSet[i]->GetSignificantObjectSignature(&significantObjects));
 	}
 
 	std::cout << "Full policy:" << std::endl;

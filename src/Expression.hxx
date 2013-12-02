@@ -29,6 +29,7 @@ protected:
 	std::string signature;
 	std::vector<int> hitSetIndexes;
 	std::vector<int> simpleDenotations;
+	std::string significantObjectSignature;
 	std::vector<std::vector<int> > denotations;
 	std::vector<std::vector<std::pair<int, int> > > denotationsRole;
 public:
@@ -85,6 +86,25 @@ public:
 			else
 				ret += "0";
 		return ret;
+	}
+
+	inline std::string GetSignificantObjectSignature(
+			std::vector<int>* significantObjects) {
+		if (this->significantObjectSignature.length() != 0)
+			return this->significantObjectSignature;
+		std::string ret;
+		if (simpleDenotations.size() == 0) {
+			this->SimplifyDenotations();
+		}
+		for (unsigned i = 0; i < simpleDenotations.size(); ++i) {
+			if (preops->IsObjectInSubset(simpleDenotations[i],
+					(*significantObjects)[i]))
+				ret += "1";
+			else
+				ret += "0";
+		}
+		significantObjectSignature = ret;
+		return significantObjectSignature;
 	}
 
 	inline std::vector<std::vector<int> > GetDenotationVec() {

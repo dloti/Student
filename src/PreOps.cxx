@@ -92,6 +92,13 @@ void PreOps::Join() {
 	}
 }
 
+bool PreOps::IsObjectInSubset(int subset_idx, int object){
+                if(std::find(subsets[subset_idx].begin(),subsets[subset_idx].end(), object)!=subsets[subset_idx].end())
+                        return true;
+
+                return false;
+}
+
 void PreOps::TestPrint() {
 	for (unsigned i = 0; i < subsets.size(); ++i) {
 		for (unsigned j = 0; j < subsets[i].size(); ++j) {

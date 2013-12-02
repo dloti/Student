@@ -27,6 +27,7 @@ class Policy {
 	std::vector<Expression*> minHitSet;
 	std::vector<std::pair<std::string, int> > stateSignatures;
 	std::vector<int> actions;
+	std::vector<int> significantObjects;
 
 	static bool moreCorrect(std::pair<std::string, int> p, std::pair<std::string, int> p1);
 	bool isSignatureMatch(std::string signature, std::string signature1);
@@ -34,7 +35,7 @@ class Policy {
 	bool goesToDifferentAction(std::string signature, int action, std::string signature1, int action1);
 
 public:
-	Policy(std::vector<Expression*> minHitSet, std::vector<Instance> instances);
+	Policy(std::vector<Expression*> minHitSet, std::vector<Instance> instances, std::vector<int> significantObjects);
 	void MinimizePolicy();
 	void MakeDecisionList();
 	void Print();

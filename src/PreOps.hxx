@@ -39,6 +39,8 @@ public:
 		return &nots;
 	}
 
+	bool IsObjectInSubset(int subset_idx, int object);
+
 	void Print(int subset_num, std::vector<std::string> allObjects);
 
 	void TestPrint();
