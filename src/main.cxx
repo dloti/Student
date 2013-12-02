@@ -43,6 +43,7 @@ vector<int> setsTouched;
 vector<Expression*> minHitSet;
 vector<Expression*> candidateHitSet;
 map<string, Expression*> features;
+vector<Expression*> multipleHitsetFeatures;
 map<string, Expression*> candidateFeatures;
 unsigned candidateWeight(0), minHitSetWeight(0);
 vector<vector<int> > subsets;
@@ -60,11 +61,37 @@ vector<string> actions;
 ActionDenotations* aDenot;
 vector<Instance> instances;
 vector<State> allStates;
-vector<Rule> ruleSet;
+//vector<Rule> ruleSet;
 PreOps* preops;
 
 int denotationSize(0);
 int runCount(1);
+
+void testHitSet() {
+	vector<int> hindex;
+	for (int i = 0; i < minHitSet.size(); ++i) {
+		vector<int> vec = minHitSet[i]->GetHitSetIndexes();
+		for (int j = 0; j < vec.size(); ++j) {
+			if (std::find(hindex.begin(), hindex.end(), vec[j]) == hindex.end())
+				hindex.push_back(vec[j]);
+		}
+	}
+
+	if (hindex.size() != conceptSets.size()) {
+		cout << "ERR HitSet wrong" << endl;
+		;
+		exit(-1);
+	}
+	sort(hindex.begin(), hindex.end());
+	for (int i = 0; i < hindex.size(); ++i) {
+		if (hindex[i] != i) {
+			cout << "ERR HitSet wrong" << endl;
+			;
+			exit(-1);
+		}
+	}
+	cout << "HitSet correct" << endl;
+}
 
 void print_min_hitset() {
 	cout << endl;
@@ -338,16 +365,22 @@ void get_all_states() {
 	}
 }
 
-string denote_for_obj(vector<Expression*> filteredExpressions, int pos, int obj) {
+string denote_for_obj(vector<Expression*> filteredExpressions, int example_num, int obj) {
 	string ret;
 	for (unsigned i = 0; i < filteredExpressions.size(); ++i)
-		ret += filteredExpressions[i]->GetSignificantObjectSign(pos, obj);
+		ret += filteredExpressions[i]->GetSignificantObjectSign(example_num, obj);
 	return ret;
 }
 
+void set_bits_in_hitset(int pos) {
+	for (unsigned i = 0; i < minHitSet.size(); ++i) {
+		if (minHitSet[i]->GetSignature()[pos] != '1') {
+			minHitSet[i] = new Not(minHitSet[i], &allObjectsIdx, preops);
+		}
+	}
+}
 void generate_concept_sets() {
 	srand((unsigned int) time(NULL));
-	get_all_states();
 
 	string signature;
 	vector<Expression*> filteredExpressions;
@@ -357,17 +390,14 @@ void generate_concept_sets() {
 		filteredExpressions.push_back(rootConcepts[i]);
 	}
 
-//	map<int, vector<NegativeExample> >::iterator itr;
-//	for (itr = negativeExamples.begin(); itr != negativeExamples.end(); ++itr) {
-//		for (unsigned i = 0; i < itr->second.size(); ++i) {
-//			string str = denote_for_obj(filteredExpressions, itr->first,
-//					itr->second[i].GetObj());
-//			//cout<<str<<endl;
-//			negativeSignatures[itr->first].push_back(
-//					denote_for_obj(filteredExpressions, itr->first,
-//							itr->second[i].GetObj()));
-//		}
-//	}
+	map<int, vector<NegativeExample> >::iterator itr;
+	for (itr = negativeExamples.begin(); itr != negativeExamples.end(); ++itr) {
+		for (unsigned i = 0; i < itr->second.size(); ++i) {
+			string str = denote_for_obj(filteredExpressions, itr->first, itr->second[i].GetObj());
+			negativeSignatures[itr->first].push_back(
+					denote_for_obj(filteredExpressions, itr->first, itr->second[i].GetObj()));
+		}
+	}
 
 	for (unsigned i = 0; i < allStates.size(); ++i) {
 		for (unsigned j = 0; j < allStates.size(); ++j) {
@@ -402,48 +432,48 @@ void generate_concept_sets() {
 					allStates[j].Print(allObjects);
 					cout << endl << allStates[j].GetAction() << " " << allObjects[allStates[j].GetSignificantObject()]
 							<< endl;
+					exit(-1);
 				}
 //				cout << "States: " << i << ", " << j << " : " << allStates[i].GetAction() << "-"
 //				<< allStates[j].GetAction() << " size: " << conceptSets[conceptSets.size() - 1].size() << endl;
 			}
 		}
-		//TODO finish adding negative example sets
-//		string current;
-//		for (unsigned k = 0; k < filteredExpressions.size(); ++k) {
-//			signature = filteredExpressions[k]->GetSignificantObjectSignature(
-//					&significantObjects);
-//			current += signature[i];
-//		}
-//
-//		if (negativeExamples.find(i) != negativeExamples.end()) {
-//			for (unsigned j = 0; j < negativeExamples[i].size(); ++j) {
-//
-//				signature = negativeSignatures[i][j];
-//				conceptSets.push_back(vector<Expression*>());
-//				bool isEmpty = true;
-//				for (unsigned k = 0; k < filteredExpressions.size(); ++k) {
-//					if (current[k] != signature[k]) {
-//						isEmpty=false;
-//						if (signature[k] != '1' && signature[k] != '0') {
-//							cout << "ERR signature wrong: ";
-//							filteredExpressions[k]->infix(cout);
-//							cout << endl;
-//							cout << i << ":" << allStates.size() << endl;
-//
-//						}
-//						conceptSets[conceptSets.size() - 1].push_back(
-//								filteredExpressions[k]);
-//						filteredExpressions[k]->IncHits();
-//						filteredExpressions[k]->AddHit(conceptSets.size() - 1);
-//					}
-//				}
-//				if (isEmpty){
-//					cout << "Empty set: " << i << "," << j << " "<<endl;
-//					cout<<negativeExamples[i][j].GetAction()<<" "<<allObjects[negativeExamples[i][j].GetObj()]<<endl;
-//				}
-//			}
-//		}
-		//TODO end
+
+		string current;
+		for (unsigned k = 0; k < filteredExpressions.size(); ++k) {
+			signature = filteredExpressions[k]->GetSignificantObjectSignature(&significantObjects);
+			current += signature[i];
+		}
+
+		if (negativeExamples.find(i) != negativeExamples.end()) {
+			for (unsigned j = 0; j < negativeExamples[i].size(); ++j) {
+
+				signature = negativeSignatures[i][j];
+				conceptSets.push_back(vector<Expression*>());
+				bool isEmpty = true;
+				for (unsigned k = 0; k < filteredExpressions.size(); ++k) {
+					if (current[k] != signature[k]) {
+						isEmpty = false;
+						if (signature[k] != '1' && signature[k] != '0') {
+							cout << "ERR signature wrong: ";
+							filteredExpressions[k]->infix(cout);
+							cout << endl;
+							cout << i << ":" << allStates.size() << endl;
+
+						}
+						conceptSets[conceptSets.size() - 1].push_back(filteredExpressions[k]);
+						filteredExpressions[k]->IncHits();
+						filteredExpressions[k]->AddHit(conceptSets.size() - 1);
+					}
+				}
+				if (isEmpty) {
+					cout << "Empty set: " << i << "," << j << " " << endl;
+					cout << negativeExamples[i][j].GetAction() << " " << allObjects[negativeExamples[i][j].GetObj()]
+							<< endl;
+					exit(-1);
+				}
+			}
+		}
 
 		for (unsigned k = 0; k < filteredExpressions.size(); ++k) {
 			if (filteredExpressions[k]->GetHits() > 0)
@@ -464,9 +494,9 @@ void generate_concept_sets() {
 		sgreedy();
 
 		cout << "Minimum hitset with " << minHitSet.size() << " members inside." << endl;
-
+		testHitSet();
+		set_bits_in_hitset(i);
 		minHittingSets.push_back(minHitSet);
-		//add_rule();
 
 		print_min_hitset();
 		conceptSets.clear();
@@ -890,14 +920,18 @@ void get_input() {
 		significantObjects.insert(significantObjects.end(), v.begin(), v.end());
 	}
 
+	get_all_states();
 	fin.open("non_applicable.txt");
 	if (fin.is_open()) {
 		int cnt = 0;
 		while (!fin.eof() && getline(fin, line)) {
-			if (line.compare("") == 0 || line.compare("-NO-OP-") == 0) {
+			if (line.compare("") == 0) {
 				++cnt;
 				continue;
 			}
+			if (line.compare("-NO-OP-") == 0)
+				continue;
+
 			istringstream iss(line);
 			getline(iss, field, ' ');
 			string action = field;
@@ -906,6 +940,9 @@ void get_input() {
 				getline(iss, field, ' ');
 			}
 			string object = field;
+			int objectIdx = resolve_object(object);
+			if (allStates[cnt].GetSignificantObject() == objectIdx)
+				continue;
 			int actionIdx = -1;
 			for (unsigned k = 0; k < actions.size(); ++k) {
 				if (actions[k].compare(action) == 0) {
@@ -913,7 +950,7 @@ void get_input() {
 					break;
 				}
 			}
-			const NegativeExample nex(action, actionIdx, resolve_object(object));
+			const NegativeExample nex(action, actionIdx, objectIdx);
 			vector<NegativeExample> neg = negativeExamples[cnt];
 
 			if (neg.empty() || std::find(neg.begin(), neg.end(), nex) == neg.end())
@@ -1018,62 +1055,18 @@ void initialize() {
 void learn_concepts() {
 	initialize();
 	combine_roles();
-//combine_concepts();
+	//combine_concepts();
 	syntax_concepts();
 }
 
-//void make_features() {
-//	BinaryOperator *bo = NULL;
-//	map<string, Expression*>::iterator it = features.begin(), fnd;
-//	map<string, Expression*>::iterator cit = candidateFeatures.begin();
-//	map<string, Expression*> tmp;
-//	for (it = features.begin(); it != features.end(); ++it) {
-//		for (cit = candidateFeatures.begin(); cit != candidateFeatures.end();
-//				++cit) {
-//			bo = new Join((*it).second, (*cit).second, preops);
-//			string signature = bo->GetSignificantObjectSignature(
-//					&significantObjects);
-//			if (bo->GetNonEmptyDenotationNum() == 0) {
-//				delete bo;
-//				continue;
-//			}
-//			fnd = features.find(signature);
-//			if (fnd != features.end()) {
-//				//if ((bo->EqualSimpleDenotationVec((*fnd).second))) {
-//				delete bo;
-//				continue;
-//				//}
-//			}
-//
-//			fnd = candidateFeatures.find(signature);
-//			if (fnd != candidateFeatures.end()) {
-//				//if ((bo->EqualSimpleDenotationVec((*fnd).second))) {
-//				delete bo;
-//				continue;
-//				//}
-//			}
-//
-//			tmp[signature] = bo;
-//		}
-//	}
-//
-//	candidateFeatures.clear();
-//	cout << "temp size " << tmp.size() << endl;
-//	for (fnd = tmp.begin(); fnd != tmp.end(); ++fnd)
-//		candidateFeatures[(*fnd).second->GetSignificantObjectSignature(
-//				&significantObjects)] = (*fnd).second;
-//}
+Expression* get_expression_from_hitset(int pos) {
+	Expression* ex = minHittingSets[pos][0];
+	for (unsigned i = 1; i < minHittingSets[pos].size(); ++i)
+		ex = new Join(ex, minHittingSets[pos][i], preops);
+	return ex;
+}
 void write_policy() {
 	ofstream fout;
-	fout.open("decision_list.txt");
-	Policy* p = new Policy(minHitSet, instances, significantObjects);
-	p->MinimizePolicy();
-	p->PrintMinimalPolicy();
-	p->MakeDecisionList();
-	p->PrintDecisionList(fout);
-	fout.flush();
-	fout.close();
-
 	fout.open("policy.txt");
 	for (unsigned i = 0; i < primitiveConcepts.size(); ++i)
 		fout << primitiveConcepts[i] << " ";
@@ -1081,145 +1074,29 @@ void write_policy() {
 	for (unsigned i = 0; i < primitiveRoles.size(); ++i)
 		fout << primitiveRoles[i] << " ";
 	fout << endl;
-	for (unsigned i = 0; i < minHitSet.size(); ++i) {
-		minHitSet[i]->prefix(fout);
-		fout << endl;
-		fout << minHitSet[i]->GetSignificantObjectSignature(&significantObjects);
-		fout << endl;
+	for (unsigned i = 0; i < minHittingSets.size(); ++i) {
+		Expression* ex = get_expression_from_hitset(i);
+		ex->prefix(fout);
+		fout << std::endl;
+		fout << allStates[i].GetAction();
+		fout << std::endl;
 	}
-	fout.close();
-	fout.open("actions.txt");
-	for (unsigned j = 0; j < instances.size(); ++j) {
-		for (unsigned k = 0; k < instances[j].GetStates()->size(); ++k) {
-			for (unsigned l = 0; l < actions.size(); ++l) {
-				if (actions[l].compare(instances[j][k].GetAction()) == 0) {
-					if (j == instances.size() - 1 && k == instances[j].GetStates()->size() - 1)
-						fout << l;
-					else
-						fout << l << " ";
-				}
-			}
-		}
-	}
-	fout.close();
+	fout << endl;
 }
-//void make_policy() {
-//	for (unsigned i = 0; i < minHitSet.size(); ++i) {
-//		features[minHitSet[i]->GetSignature()] = minHitSet[i];
-//		candidateFeatures[minHitSet[i]->GetSignature()] = minHitSet[i];
-//	}
-//	map<string, Expression*>::iterator cit = candidateFeatures.begin();
-//	int numCovered = 0;
-//	int layer = 0;
-//	cout << "Total number of concepts: " << rootConcepts.size() << endl;
-//	while (numCovered < denotationSize) {
-//		if (candidateFeatures.size() == 0) {
-//			cout
-//					<< "Full coverage not possible, total number of features generated: "
-//					<< features.size() << " covered: " << numCovered << " of "
-//					<< denotationSize << endl;
-//			return;
-//		}
-//
-//		for (cit = candidateFeatures.begin(); cit != candidateFeatures.end();
-//				++cit) {
-//			string cSignature = (*cit).second->GetSignature();
-//			if ((*cit).second->GetNonEmptyDenotationNum() == 0) {
-//				cout << "ERR: all empty feature ";
-//				(*cit).second->infix(cout);
-//				cout << endl;
-//				continue;
-//			}
-//			bool mistake = false;
-//			int correct = 0;
-//
-//			for (unsigned j = 0; j < actions.size(); ++j) {
-//				correct = 0;
-//				mistake = false;
-//				vector<pair<int, int> > coVector;
-//				for (unsigned k = 0; k < cSignature.length(); ++k) {
-//
-//					if (cSignature[k] != '0' && !((*aDenot)[j][k])) {
-//						mistake = true;
-//						break;
-//					}
-//					if (cSignature[k] != '0' && (*aDenot)[j][k]
-//							&& (*aDenot)[j][k] != 2) {
-//						++correct;
-//						pair<int, int> p(j, k);
-//						coVector.push_back(p);
-//					}
-//				}
-//
-//				if (!mistake && correct > 0) {
-//					for (unsigned v = 0; v < coVector.size(); ++v) {
-//						aDenot->SetCovered(coVector[v].first,
-//								coVector[v].second);
-//					}
-//					numCovered += correct;
-//					Rule r((*cit).second, actions[j]);
-//					r.SetCorrect(correct);
-//					ruleSet.push_back(r);
-//				}
-//				coVector.clear();
-//			}
-//		}
-//
-//		if (layer != 0)
-//			features.insert(candidateFeatures.begin(), candidateFeatures.end());
-//		++layer;
-//		make_features();
-//	}
-//}
-
-//void write_policy() {
-//	ofstream fout;
-//	fout.open("policy.txt");
-//	for (unsigned i = 0; i < primitiveConcepts.size(); ++i)
-//		fout << primitiveConcepts[i] << " ";
-//	fout << endl;
-//	for (unsigned i = 0; i < primitiveRoles.size(); ++i)
-//		fout << primitiveRoles[i] << " ";
-//	fout << endl;
-//	for (unsigned i = 0; i < ruleSet.size(); ++i)
-//		ruleSet[i].SaveRule(fout);
-//	fout << endl;
-//}
-
-//bool testHitSet() {
-//	vector<int> hindex;
-//	for (int i = 0; i < minHitSet.size(); ++i) {
-//		vector<int> vec = minHitSet[i]->GetHitSetIndexes();
-//		for (int j = 0; j < vec.size(); ++j) {
-//			if (std::find(hindex.begin(), hindex.end(), vec[j]) == hindex.end())
-//				hindex.push_back(vec[j]);
-//		}
-//	}
-//
-//	if (hindex.size() != conceptSets.size())
-//		return false;
-//	sort(hindex.begin(), hindex.end());
-//	for (int i = 0; i < hindex.size(); ++i) {
-//		if (hindex[i] != i) {
-//			return false;
-//		}
-//	}
-//	return true;
-//}
 
 void make_features_multiple_hitset() {
-	vector<Expression*> localFeatures;
 	for (unsigned i = 0; i < minHittingSets.size(); ++i) {
 		for (unsigned j = 0; j < minHittingSets[i].size(); ++j) {
-			if (find(localFeatures.begin(), localFeatures.end(), minHittingSets[i][j]) == localFeatures.end())
-				localFeatures.push_back(minHittingSets[i][j]);
+			if (find(multipleHitsetFeatures.begin(), multipleHitsetFeatures.end(), minHittingSets[i][j])
+					== multipleHitsetFeatures.end())
+				multipleHitsetFeatures.push_back(minHittingSets[i][j]);
 		}
 	}
 
 	cout << endl << " --Expressions -- " << endl;
-	cout << "Number of features: " << localFeatures.size() << endl;
-	for (unsigned i = 0; i < localFeatures.size(); ++i) {
-		localFeatures[i]->infix(cout);
+	cout << "Number of features: " << multipleHitsetFeatures.size() << endl;
+	for (unsigned i = 0; i < multipleHitsetFeatures.size(); ++i) {
+		multipleHitsetFeatures[i]->infix(cout);
 		cout << endl;
 	}
 }
@@ -1250,11 +1127,11 @@ int main(int argc, char** argv) {
 	t0 = time_used();
 	learn_concepts();
 	generate_concept_sets();
+	make_features_multiple_hitset();
 //	make_policy();
 //	sort(ruleSet.begin(), ruleSet.end());
 
-	//write_policy();
-	make_features_multiple_hitset();
+	write_policy();
 	debug_output();
 	tf = time_used();
 	cout << endl << "Total time: ";

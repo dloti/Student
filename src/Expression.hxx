@@ -102,13 +102,11 @@ public:
 		}
 		if(example_num>=simpleDenotations.size()){
 			std::cout<<"ERR example number is "<<example_num<<" denotation size is "<<simpleDenotations.size()<<std::endl;
+			exit(-1);
 		}
 			if (obj < 0) {
-				std::cout<<"Object error!"<<std::endl;
-				if (simpleDenotations[example_num])
-					return "1";
-				else
-					return "0";
+				std::cout<<"ERR Object error GetSignificantObjectSign!"<<std::endl;
+				exit(-1);
 			}
 			if (simpleDenotations[example_num]) {
 				if (preops->IsObjectInSubset(simpleDenotations[example_num],obj))
