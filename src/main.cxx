@@ -61,7 +61,7 @@ vector<string> actions;
 ActionDenotations* aDenot;
 vector<Instance> instances;
 vector<State> allStates;
-//vector<Rule> ruleSet;
+vector<Rule> ruleSet;
 PreOps* preops;
 
 int denotationSize(0);
@@ -1061,9 +1061,46 @@ void learn_concepts() {
 
 Expression* get_expression_from_hitset(int pos) {
 	Expression* ex = minHittingSets[pos][0];
-	for (unsigned i = 1; i < minHittingSets[pos].size(); ++i)
+	for (unsigned i = 1; i < minHittingSets[pos].size(); ++i) {
 		ex = new Join(ex, minHittingSets[pos][i], preops);
+	}
+	ex->SimplifyDenotations();
 	return ex;
+}
+
+void make_rules() {
+	for (unsigned i = 0; i < minHittingSets.size(); ++i) {
+		Expression* ex = get_expression_from_hitset(i);
+		Rule r(ex, allStates[i].GetAction());
+		ruleSet.push_back(r);
+	}
+	vector<int> correctly_covered;
+	for (unsigned i = 0; i < ruleSet.size(); ++i) {
+		string current_signature = ruleSet[i].GetConcept()->GetSignature();
+		for (unsigned j = 0; j < allStates.size(); ++j) {
+			if (find(correctly_covered.begin(), correctly_covered.end(), j) != correctly_covered.end())
+				continue;
+			if (current_signature[j] == '1') {
+
+				ruleSet[i].IncCoverage();
+				if (ruleSet[i].GetAction().compare(allStates[j].GetAction()) == 0) {
+					if (ruleSet[i].GetConcept()->GetSignificantObjectSign(j, allStates[j].GetSignificantObject()).compare(
+							"1") == 0) {
+						cout << i << " ";
+						correctly_covered.push_back(j);
+						ruleSet[i].IncCorrect();
+					}
+				}
+			}
+
+		}
+	}
+
+	if (correctly_covered.size() != allStates.size()) {
+		cout << endl << "Correctly covered:" << correctly_covered.size() << " " << allStates.size() << endl;
+	}
+
+	sort(ruleSet.begin(), ruleSet.end());
 }
 void write_policy() {
 	ofstream fout;
@@ -1074,12 +1111,10 @@ void write_policy() {
 	for (unsigned i = 0; i < primitiveRoles.size(); ++i)
 		fout << primitiveRoles[i] << " ";
 	fout << endl;
-	for (unsigned i = 0; i < minHittingSets.size(); ++i) {
-		Expression* ex = get_expression_from_hitset(i);
-		ex->prefix(fout);
-		fout << std::endl;
-		fout << allStates[i].GetAction();
-		fout << std::endl;
+	make_rules();
+	for (unsigned i = 0; i < ruleSet.size(); ++i) {
+		if (ruleSet[i].GetCorrect() > 0)
+			ruleSet[i].SaveRule(fout);
 	}
 	fout << endl;
 }
