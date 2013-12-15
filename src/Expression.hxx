@@ -76,21 +76,17 @@ public:
 			this->SimplifyDenotations();
 		}
 		for (unsigned i = 0; i < simpleDenotations.size(); ++i) {
-			if ((*significantObjects)[i] < 0) {
-				if (simpleDenotations[i])
-					ret += "1";
-				else
-					ret += "0";
-				continue;
-			}
-			if (simpleDenotations[i]) {
 				if (preops->IsObjectInSubset(simpleDenotations[i],
 						(*significantObjects)[i]))
 					ret += "1";
 				else
 					ret += "0";
-			} else
-				ret += "0";
+
+		}
+		if(ret.size()!=simpleDenotations.size())
+		{
+			std::cout<<"ERR GetSignificantObjectSignature";
+			exit(-1);
 		}
 		significantObjectSignature = ret;
 		return significantObjectSignature;
@@ -108,13 +104,10 @@ public:
 				std::cout<<"ERR Object error GetSignificantObjectSign!"<<std::endl;
 				exit(-1);
 			}
-			if (simpleDenotations[example_num]) {
 				if (preops->IsObjectInSubset(simpleDenotations[example_num],obj))
 					return "1";
 				else
 					return "0";
-			} else
-				return "0";
 	}
 
 	inline std::string GetSignature() {

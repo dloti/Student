@@ -36,19 +36,20 @@ bool operator !=(Rule& r1, Rule& r2) {
 }
 
 std::ostream& operator <<(std::ostream& out, Rule& r) {
-	r.concept->infix(out); out << ":" << r.action<<" Correct:"<<r.correct;
+	r.concept->infix(out);
+	out << ":" << r.action << " Correct:" << r.correct;
 	return out;
 }
 
 bool Rule::operator <(const Rule& r2) const {
-		return (this->correct > r2.correct);
+	return (this->correct > r2.correct);
 }
 
-void Rule::SaveRule(std::ostream &out){
+void Rule::SaveRule(std::ostream &out) {
 	this->concept->prefix(out);
-	out<<std::endl;
-	out<<this->action;
-	out<<std::endl;
+	out << std::endl;
+	out << this->action;
+	out << std::endl;
 }
 
 //int Rule::GetCurrentCoverage() {
@@ -57,5 +58,10 @@ void Rule::SaveRule(std::ostream &out){
 
 Rule::~Rule() {
 	// TODO Auto-generated destructor stub
+}
+
+bool Rule::InterpretationContainsObject(int pos, int obj) {
+	bool ret = ((this->concept->GetSignificantObjectSign(pos, obj).compare("1")) == 0);
+	return ret;
 }
 

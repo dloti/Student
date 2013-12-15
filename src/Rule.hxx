@@ -55,6 +55,8 @@ public:
 	friend bool operator!=(Rule &r1, Rule &r2);
 	bool operator <(const Rule& r2) const;
 	virtual ~Rule();
+
+	bool InterpretationContainsObject(int pos, int obj);
 };
 
 #endif /* RULE_HXX_ */

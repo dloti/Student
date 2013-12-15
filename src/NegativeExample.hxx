@@ -8,6 +8,7 @@
 #ifndef NEGATIVEEXAMPLE_HXX_
 #define NEGATIVEEXAMPLE_HXX_
 #include<string>
+#include<iostream>
 
 class NegativeExample {
 	std::string action;
